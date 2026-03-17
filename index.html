@@ -38,8 +38,8 @@
     .hidden { display: none; }
 
     .panel {
-      width: min(94vw, 760px);
-      background: rgba(24, 24, 24, 0.96);
+      width: min(94vw, 840px);
+      background: rgba(24, 24, 24, 0.97);
       border: 2px solid #444;
       border-radius: 18px;
       padding: 24px;
@@ -129,10 +129,10 @@
       grid-template-columns: 1fr;
       gap: 12px;
       margin-top: 14px;
+      text-align: left;
     }
 
     .store-card {
-      text-align: left;
       background: #232323;
       border: 1px solid #3d3d3d;
       border-radius: 14px;
@@ -187,11 +187,11 @@
   <div id="menu" class="overlay">
     <div class="panel">
       <h1>Alien Planet Fighter</h1>
-      <p>Fight through 5 long alien levels, clear enemy camps, reach the portal, then buy upgrades at the store.</p>
+      <p>Fight through 5 long alien levels, clear enemy camps, reach the portal, then buy upgrades before moving on.</p>
       <p class="small">
         Move with <b>W A S D</b> or <b>Arrow Keys</b>.<br>
         Attacks are automatic.<br>
-        Enemies stay in their area until you get close.
+        Enemies stay in their camp area until you get close.
       </p>
       <div class="btn-row">
         <button id="swordBtn">Sword Class</button>
@@ -205,7 +205,7 @@
       <div class="store-top">
         <div>
           <h2 style="margin-bottom:6px;">Field Store</h2>
-          <p style="margin-bottom:0;">Buy upgrades before entering the next portal.</p>
+          <p style="margin-bottom:0;">Buy upgrades from the shop keeper before heading to the next portal.</p>
         </div>
         <div style="font-size:20px; font-weight:700;">Money: $<span id="storeMoneyText">0</span></div>
       </div>
@@ -213,7 +213,7 @@
       <div id="storeGrid"></div>
 
       <div class="btn-row">
-        <button id="nextLevelBtn">Enter Next Portal</button>
+        <button id="continueBtn">Continue To Next Level</button>
       </div>
     </div>
   </div>
@@ -249,7 +249,7 @@
 
     const swordBtn = document.getElementById("swordBtn");
     const shooterBtn = document.getElementById("shooterBtn");
-    const nextLevelBtn = document.getElementById("nextLevelBtn");
+    const continueBtn = document.getElementById("continueBtn");
     const restartBtn = document.getElementById("restartBtn");
     const playAgainBtn = document.getElementById("playAgainBtn");
 
@@ -346,6 +346,7 @@
     let coins = [];
     let effects = [];
     let damageTexts = [];
+    let destructibles = [];
     let attackTimer = 0;
     let camera = { x: 0, y: 0 };
 
@@ -357,12 +358,13 @@
         accent: "#92b85a",
         obstacleColor: "#41552d",
         slimeColor: "#89d15b",
-        mapW: 3800,
-        mapH: 1700,
+        bridgeColor: "#8f6a3b",
+        mapW: 3900,
+        mapH: 1750,
         enemyHp: 44,
         enemyDamage: 12,
         enemySpeed: 1.25,
-        enemyCount: 26,
+        enemyCount: 28,
         moneyDrop: [8, 13]
       },
       {
@@ -372,12 +374,13 @@
         accent: "#d08f76",
         obstacleColor: "#5c2a25",
         slimeColor: "#f1b16f",
-        mapW: 4100,
-        mapH: 1800,
+        bridgeColor: "#a06e45",
+        mapW: 4250,
+        mapH: 1820,
         enemyHp: 62,
         enemyDamage: 16,
         enemySpeed: 1.35,
-        enemyCount: 30,
+        enemyCount: 32,
         moneyDrop: [10, 15]
       },
       {
@@ -387,12 +390,13 @@
         accent: "#7db5d8",
         obstacleColor: "#203949",
         slimeColor: "#9de5ff",
-        mapW: 4400,
-        mapH: 1900,
+        bridgeColor: "#8a7044",
+        mapW: 4550,
+        mapH: 1920,
         enemyHp: 86,
         enemyDamage: 20,
         enemySpeed: 1.45,
-        enemyCount: 34,
+        enemyCount: 36,
         moneyDrop: [12, 18]
       },
       {
@@ -402,12 +406,13 @@
         accent: "#bdb8c1",
         obstacleColor: "#363238",
         slimeColor: "#d8c86a",
-        mapW: 4700,
-        mapH: 2000,
+        bridgeColor: "#9a7650",
+        mapW: 4850,
+        mapH: 2020,
         enemyHp: 118,
         enemyDamage: 24,
         enemySpeed: 1.58,
-        enemyCount: 38,
+        enemyCount: 40,
         moneyDrop: [15, 22]
       },
       {
@@ -417,12 +422,13 @@
         accent: "#c784ff",
         obstacleColor: "#311d42",
         slimeColor: "#ff89ff",
-        mapW: 5200,
-        mapH: 2100,
+        bridgeColor: "#9f7b58",
+        mapW: 5300,
+        mapH: 2120,
         enemyHp: 160,
         enemyDamage: 30,
         enemySpeed: 1.72,
-        enemyCount: 42,
+        enemyCount: 44,
         moneyDrop: [18, 26]
       }
     ];
@@ -467,13 +473,20 @@
 
     swordBtn.addEventListener("click", () => startGame("sword"));
     shooterBtn.addEventListener("click", () => startGame("shooter"));
-    restartBtn.addEventListener("click", () => menu.classList.remove("hidden") || gameOverScreen.classList.add("hidden"));
-    playAgainBtn.addEventListener("click", () => menu.classList.remove("hidden") || winScreen.classList.add("hidden"));
+
+    restartBtn.addEventListener("click", () => {
+      gameOverScreen.classList.add("hidden");
+      menu.classList.remove("hidden");
+    });
+
+    playAgainBtn.addEventListener("click", () => {
+      winScreen.classList.add("hidden");
+      menu.classList.remove("hidden");
+    });
 
     function buildObstacles(spec) {
       const obs = [];
 
-      // top and bottom canyon walls
       obs.push({ x: 260, y: 0, w: 280, h: 520, type: "rock" });
       obs.push({ x: 260, y: spec.mapH - 520, w: 280, h: 520, type: "rock" });
 
@@ -483,25 +496,23 @@
       obs.push({ x: 1240, y: 220, w: 260, h: 540, type: "rock" });
       obs.push({ x: 1240, y: 980, w: 260, h: 560, type: "rock" });
 
-      obs.push({ x: 1760, y: 0, w: 240, h: 460, type: "rock" });
-      obs.push({ x: 1760, y: spec.mapH - 620, w: 240, h: 620, type: "rock" });
+      obs.push({ x: 1760, y: 0, w: 240, h: 460, type: "caveWall" });
+      obs.push({ x: 1760, y: spec.mapH - 620, w: 240, h: 620, type: "caveWall" });
 
       obs.push({ x: 2280, y: 240, w: 280, h: 520, type: "rock" });
       obs.push({ x: 2280, y: 980, w: 280, h: 620, type: "rock" });
 
-      obs.push({ x: 2860, y: 0, w: 220, h: 400, type: "rock" });
-      obs.push({ x: 2860, y: spec.mapH - 700, w: 220, h: 700, type: "rock" });
+      obs.push({ x: 2860, y: 0, w: 220, h: 400, type: "caveWall" });
+      obs.push({ x: 2860, y: spec.mapH - 700, w: 220, h: 700, type: "caveWall" });
 
       obs.push({ x: 3340, y: 180, w: 260, h: 500, type: "rock" });
       obs.push({ x: 3340, y: 1010, w: 260, h: 520, type: "rock" });
 
-      // side objects
       obs.push({ x: 580, y: 760, w: 140, h: 140, type: "pillar" });
       obs.push({ x: 1540, y: 760, w: 160, h: 160, type: "pillar" });
       obs.push({ x: 2580, y: 770, w: 150, h: 150, type: "pillar" });
       obs.push({ x: 3660, y: 740, w: 170, h: 170, type: "pillar" });
 
-      // slime pools as blockers
       obs.push({ x: 980, y: 720, w: 130, h: 220, type: "slime" });
       obs.push({ x: 2040, y: 710, w: 140, h: 240, type: "slime" });
       obs.push({ x: 3140, y: 700, w: 130, h: 240, type: "slime" });
@@ -516,21 +527,47 @@
       return obs;
     }
 
+    function buildBridges(spec) {
+      const bridges = [];
+      const slimeRects = [
+        { x: 980, y: 720, w: 130, h: 220 },
+        { x: 2040, y: 710, w: 140, h: 240 },
+        { x: 3140, y: 700, w: 130, h: 240 }
+      ];
+
+      if (spec.mapW > 4200) {
+        slimeRects.push({ x: 3900, y: 720, w: 120, h: 220 });
+      }
+
+      for (const s of slimeRects) {
+        bridges.push({
+          x: s.x - 14,
+          y: s.y + s.h / 2 - 24,
+          w: s.w + 28,
+          h: 48,
+          type: "bridge"
+        });
+      }
+      return bridges;
+    }
+
     function buildEnemyCamps(spec) {
       const camps = [];
       const laneY = spec.mapH / 2;
-
       const campPositions = [];
       let x = 520;
+
       while (x < spec.mapW - 360) {
         campPositions.push(x);
-        x += 270;
+        x += 280;
       }
 
       let enemiesLeft = spec.enemyCount;
+
       for (let i = 0; i < campPositions.length && enemiesLeft > 0; i++) {
         const campX = campPositions[i];
         const count = Math.min(3 + (i % 3), enemiesLeft);
+        const campRadius = 170 + (i % 3) * 15;
 
         for (let j = 0; j < count; j++) {
           const ox = rand(-70, 70);
@@ -540,6 +577,9 @@
             y: laneY + oy,
             homeX: campX + ox,
             homeY: laneY + oy,
+            campX,
+            campY: laneY,
+            campRadius,
             radius: 16,
             size: 26,
             hp: spec.enemyHp,
@@ -547,8 +587,8 @@
             speed: spec.enemySpeed,
             damage: spec.enemyDamage,
             aggro: false,
-            aggroRange: 220,
-            leashRange: 340,
+            aggroRange: 230,
+            leashRange: 360,
             money: Math.floor(rand(spec.moneyDrop[0], spec.moneyDrop[1] + 1)),
             hitFlash: 0
           });
@@ -560,14 +600,55 @@
       return camps;
     }
 
+    function buildDestructibles(spec) {
+      const arr = [];
+      const points = [690, 1140, 1670, 2140, 2730, 3290, 3820, 4380, 4880];
+      for (const x of points) {
+        if (x < spec.mapW - 120) {
+          arr.push({
+            x: x + rand(-40, 30),
+            y: spec.mapH / 2 + rand(-260, 260),
+            radius: 24,
+            hp: 28,
+            maxHp: 28,
+            reward: Math.floor(rand(8, 18)),
+            hitFlash: 0,
+            dead: false,
+            type: Math.random() > 0.5 ? "crate" : "pod"
+          });
+        }
+      }
+      return arr;
+    }
+
+    function buildDecor(spec) {
+      const arr = [];
+      for (let i = 0; i < 160; i++) {
+        arr.push({
+          kind: i % 4 === 0 ? "plant" : "stone",
+          x: rand(40, spec.mapW - 40),
+          y: rand(40, spec.mapH - 40),
+          r: rand(8, 24)
+        });
+      }
+      return arr;
+    }
+
     function loadLevel(index) {
       currentLevelIndex = index;
       currentLevel = structuredClone(levels[index]);
       currentLevel.obstacles = buildObstacles(currentLevel);
+      currentLevel.bridges = buildBridges(currentLevel);
       currentLevel.portal = { x: currentLevel.mapW - 140, y: currentLevel.mapH / 2, radius: 40, open: false };
       currentLevel.storeZone = { x: currentLevel.mapW - 300, y: currentLevel.mapH / 2 - 140, w: 120, h: 280 };
       currentLevel.decor = buildDecor(currentLevel);
+      currentLevel.shopKeeper = {
+        x: currentLevel.storeZone.x + currentLevel.storeZone.w / 2,
+        y: currentLevel.storeZone.y + currentLevel.storeZone.h / 2 + 30
+      };
+
       enemies = buildEnemyCamps(currentLevel);
+      destructibles = buildDestructibles(currentLevel);
       projectiles = [];
       coins = [];
       effects = [];
@@ -583,21 +664,21 @@
       pausedForStore = false;
       running = true;
       storeScreen.classList.add("hidden");
+
       levelText.textContent = String(index + 1);
       areaText.textContent = currentLevel.name;
     }
 
-    function buildDecor(spec) {
-      const arr = [];
-      for (let i = 0; i < 140; i++) {
-        arr.push({
-          kind: i % 4 === 0 ? "plant" : "stone",
-          x: rand(40, spec.mapW - 40),
-          y: rand(40, spec.mapH - 40),
-          r: rand(8, 24)
-        });
+    function obstacleBlocksMovement(o, entity) {
+      if (o.type === "slime") {
+        for (const b of currentLevel.bridges) {
+          if (entity.x > b.x && entity.x < b.x + b.w && entity.y > b.y && entity.y < b.y + b.h) {
+            return false;
+          }
+        }
+        return true;
       }
-      return arr;
+      return true;
     }
 
     function updatePlayer() {
@@ -622,7 +703,9 @@
       player.y = clamp(player.y, player.radius, currentLevel.mapH - player.radius);
 
       for (const obstacle of currentLevel.obstacles) {
-        resolveCircleRectCollision(player, obstacle);
+        if (obstacleBlocksMovement(obstacle, player)) {
+          resolveCircleRectCollision(player, obstacle);
+        }
       }
 
       if (player.contactDamageCooldown > 0) player.contactDamageCooldown--;
@@ -635,18 +718,36 @@
     }
 
     function autoAttack() {
-      const targets = enemies.filter(e => e.hp > 0 && dist(player.x, player.y, e.x, e.y) <= player.range);
+      const allTargets = [];
 
-      if (!targets.length) return;
+      for (const enemy of enemies) {
+        if (enemy.hp > 0 && dist(player.x, player.y, enemy.x, enemy.y) <= player.range) {
+          allTargets.push({ type: "enemy", obj: enemy, d: dist(player.x, player.y, enemy.x, enemy.y) });
+        }
+      }
+
+      for (const d of destructibles) {
+        if (!d.dead && dist(player.x, player.y, d.x, d.y) <= player.range) {
+          allTargets.push({ type: "destructible", obj: d, d: dist(player.x, player.y, d.x, d.y) });
+        }
+      }
+
+      if (!allTargets.length) return;
 
       if (player.classType === "sword") {
         const range = player.range + player.swordRangeBonus;
         let didHit = false;
 
         for (const enemy of enemies) {
-          if (enemy.hp <= 0) continue;
-          if (dist(player.x, player.y, enemy.x, enemy.y) <= range) {
-            applyDamage(enemy, player.power);
+          if (enemy.hp > 0 && dist(player.x, player.y, enemy.x, enemy.y) <= range) {
+            applyDamageToEnemy(enemy, player.power);
+            didHit = true;
+          }
+        }
+
+        for (const d of destructibles) {
+          if (!d.dead && dist(player.x, player.y, d.x, d.y) <= range) {
+            applyDamageToDestructible(d, player.power);
             didHit = true;
           }
         }
@@ -661,13 +762,9 @@
           });
         }
       } else {
-        const sorted = targets
-          .slice()
-          .sort((a, b) => dist(player.x, player.y, a.x, a.y) - dist(player.x, player.y, b.x, b.y))
-          .slice(0, player.projectileCount);
-
+        const sorted = allTargets.sort((a, b) => a.d - b.d).slice(0, player.projectileCount);
         for (const target of sorted) {
-          const angle = Math.atan2(target.y - player.y, target.x - player.x);
+          const angle = Math.atan2(target.obj.y - player.y, target.obj.x - player.x);
           projectiles.push({
             x: player.x,
             y: player.y,
@@ -681,16 +778,37 @@
       }
     }
 
-    function applyDamage(enemy, amount) {
+    function applyDamageToEnemy(enemy, amount) {
       enemy.hp -= amount;
       enemy.hitFlash = 4;
-
       damageTexts.push({
         x: enemy.x,
         y: enemy.y - 18,
         text: "-" + amount,
         life: 28,
         hurt: false
+      });
+    }
+
+    function applyDamageToDestructible(d, amount) {
+      d.hp -= amount;
+      d.hitFlash = 4;
+      damageTexts.push({
+        x: d.x,
+        y: d.y - 18,
+        text: "-" + amount,
+        life: 24,
+        hurt: false
+      });
+    }
+
+    function spawnCoinsAt(x, y, amount) {
+      coins.push({
+        x,
+        y,
+        radius: 9,
+        amount,
+        life: 900
       });
     }
 
@@ -730,7 +848,9 @@
         }
 
         for (const obstacle of currentLevel.obstacles) {
-          resolveCircleRectCollision(enemy, obstacle);
+          if (obstacleBlocksMovement(obstacle, enemy)) {
+            resolveCircleRectCollision(enemy, obstacle);
+          }
         }
 
         const touch = player.radius + enemy.radius;
@@ -753,7 +873,7 @@
 
       const dead = enemies.filter(e => e.hp <= 0);
       for (const enemy of dead) {
-        spawnCoins(enemy);
+        spawnCoinsAt(enemy.x, enemy.y, enemy.money);
       }
 
       enemies = enemies.filter(e => e.hp > 0);
@@ -763,14 +883,17 @@
       }
     }
 
-    function spawnCoins(enemy) {
-      coins.push({
-        x: enemy.x,
-        y: enemy.y,
-        radius: 9,
-        amount: enemy.money,
-        life: 900
-      });
+    function updateDestructibles() {
+      for (const d of destructibles) {
+        if (d.dead) continue;
+        if (d.hitFlash > 0) d.hitFlash--;
+
+        if (d.hp <= 0) {
+          d.dead = true;
+          spawnCoinsAt(d.x, d.y, d.reward);
+          effects.push({ type: "break", x: d.x, y: d.y, life: 20 });
+        }
+      }
     }
 
     function updateProjectiles() {
@@ -791,7 +914,18 @@
         for (const enemy of enemies) {
           if (enemy.hp <= 0) continue;
           if (dist(p.x, p.y, enemy.x, enemy.y) <= p.size + enemy.radius) {
-            applyDamage(enemy, p.damage);
+            applyDamageToEnemy(enemy, p.damage);
+            p.life = 0;
+            break;
+          }
+        }
+
+        if (p.life <= 0) continue;
+
+        for (const d of destructibles) {
+          if (d.dead) continue;
+          if (dist(p.x, p.y, d.x, d.y) <= p.size + d.radius) {
+            applyDamageToDestructible(d, p.damage);
             p.life = 0;
             break;
           }
@@ -811,7 +945,7 @@
       for (const coin of coins) {
         coin.life--;
 
-        if (dist(player.x, player.y, coin.x, coin.y) <= player.radius + coin.radius + 6) {
+        if (dist(player.x, player.y, coin.x, coin.y) <= player.radius + coin.radius + 8) {
           player.money += coin.amount;
           effects.push({ type: "coin", x: coin.x, y: coin.y, life: 16 });
           coin.life = 0;
@@ -882,9 +1016,7 @@
         name: "Armor",
         desc: "Take 7% less damage",
         cost: 50,
-        apply() {
-          player.armor = Math.min(0.5, player.armor + 0.07);
-        }
+        apply() { player.armor = Math.min(0.5, player.armor + 0.07); }
       },
       {
         name: "Range Upgrade",
@@ -956,7 +1088,7 @@
       });
     }
 
-    nextLevelBtn.addEventListener("click", () => {
+    continueBtn.addEventListener("click", () => {
       storeScreen.classList.add("hidden");
       pausedForStore = false;
 
@@ -1003,15 +1135,12 @@
       ctx.fillStyle = currentLevel.bg;
       ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
 
-      // path / ground bands
       ctx.fillStyle = currentLevel.ground2;
       for (let i = 0; i < currentLevel.mapW; i += 180) {
         ctx.fillRect(i, 450 + Math.sin(i * 0.003) * 20, 120, 800);
       }
 
-      // accent circles / alien patches
-      for (let i = 0; i < currentLevel.decor.length; i++) {
-        const d = currentLevel.decor[i];
+      for (const d of currentLevel.decor) {
         if (d.kind === "stone") {
           ctx.fillStyle = "rgba(255,255,255,0.06)";
           ctx.beginPath();
@@ -1024,6 +1153,29 @@
           ctx.arc(d.x, d.y, d.r * 1.2, 0, Math.PI * 2);
           ctx.fill();
           ctx.globalAlpha = 1;
+        }
+      }
+
+      for (const b of currentLevel.bridges) {
+        ctx.fillStyle = currentLevel.bridgeColor;
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        for (let i = 0; i < b.w; i += 18) {
+          ctx.fillStyle = "rgba(70,40,20,0.35)";
+          ctx.fillRect(b.x + i, b.y, 8, b.h);
+        }
+      }
+
+      drawTunnelShadows();
+    }
+
+    function drawTunnelShadows() {
+      const tunnels = currentLevel.obstacles.filter(o => o.type === "caveWall");
+      for (const o of tunnels) {
+        ctx.fillStyle = "rgba(0,0,0,0.16)";
+        if (o.y === 0) {
+          ctx.fillRect(o.x, o.h - 26, o.w, 26);
+        } else {
+          ctx.fillRect(o.x, o.y, o.w, 26);
         }
       }
     }
@@ -1046,6 +1198,11 @@
           ctx.strokeRect(o.x, o.y, o.w, o.h);
           ctx.fillStyle = "rgba(255,255,255,0.08)";
           ctx.fillRect(o.x + 12, o.y + 12, o.w - 24, o.h - 24);
+        } else if (o.type === "caveWall") {
+          ctx.fillStyle = "#2b2221";
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.fillStyle = "rgba(255,255,255,0.04)";
+          ctx.fillRect(o.x + 10, o.y + 10, o.w - 20, o.h - 20);
         } else {
           ctx.fillStyle = currentLevel.obstacleColor;
           ctx.fillRect(o.x, o.y, o.w, o.h);
@@ -1069,6 +1226,24 @@
       ctx.font = "bold 20px Arial";
       ctx.textAlign = "center";
       ctx.fillText("SHOP", currentLevel.storeZone.x + currentLevel.storeZone.w / 2, currentLevel.storeZone.y + 55);
+
+      drawShopKeeper();
+    }
+
+    function drawShopKeeper() {
+      const k = currentLevel.shopKeeper;
+      ctx.beginPath();
+      ctx.arc(k.x, k.y - 18, 14, 0, Math.PI * 2);
+      ctx.fillStyle = "#c6e86f";
+      ctx.fill();
+
+      ctx.fillStyle = "#5f3fd4";
+      ctx.fillRect(k.x - 16, k.y - 4, 32, 42);
+
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 12px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("SHOP KEEPER", k.x, k.y + 56);
     }
 
     function drawPortal() {
@@ -1119,6 +1294,29 @@
       ctx.stroke();
     }
 
+    function drawCampMarkers() {
+      const camps = new Map();
+      for (const enemy of enemies) {
+        const key = enemy.campX + ":" + enemy.campY;
+        if (!camps.has(key)) {
+          camps.set(key, { x: enemy.campX, y: enemy.campY, r: enemy.campRadius });
+        }
+      }
+
+      for (const c of camps.values()) {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,120,90,0.18)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(255,120,90,0.08)";
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     function drawEnemies() {
       for (const enemy of enemies) {
         const aggroColor = enemy.aggro ? "#ff6b57" : "#d98a7c";
@@ -1137,6 +1335,37 @@
         ctx.fillRect(enemy.x - 16, enemy.y - 24, 32, 4);
         ctx.fillStyle = "#2ecc71";
         ctx.fillRect(enemy.x - 16, enemy.y - 24, 32 * pct, 4);
+      }
+    }
+
+    function drawDestructibles() {
+      for (const d of destructibles) {
+        if (d.dead) continue;
+
+        ctx.save();
+        if (d.hitFlash > 0) {
+          ctx.fillStyle = "#fff";
+        } else {
+          ctx.fillStyle = d.type === "crate" ? "#9b6a3b" : "#8e5fd6";
+        }
+
+        if (d.type === "crate") {
+          ctx.fillRect(d.x - 22, d.y - 22, 44, 44);
+          ctx.strokeStyle = "rgba(255,255,255,0.25)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(d.x - 22, d.y - 22, 44, 44);
+        } else {
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        const pct = clamp(d.hp / d.maxHp, 0, 1);
+        ctx.fillStyle = "#222";
+        ctx.fillRect(d.x - 18, d.y - 32, 36, 4);
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(d.x - 18, d.y - 32, 36 * pct, 4);
+        ctx.restore();
       }
     }
 
@@ -1186,6 +1415,15 @@
           ctx.lineWidth = 3;
           ctx.stroke();
           ctx.restore();
+        } else if (e.type === "break") {
+          ctx.save();
+          ctx.globalAlpha = e.life / 20 * 0.5;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, 14 + (20 - e.life), 0, Math.PI * 2);
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.restore();
         }
       }
     }
@@ -1211,6 +1449,9 @@
       if (!currentLevel.portal.open) {
         ctx.font = "bold 16px Arial";
         ctx.fillText("Clear all enemy camps to open portal", player.x, player.y - 58);
+      } else {
+        ctx.font = "bold 16px Arial";
+        ctx.fillText("Portal is open", player.x, player.y - 58);
       }
     }
 
@@ -1221,9 +1462,11 @@
       ctx.translate(-camera.x, -camera.y);
 
       drawWorldBackground();
+      drawCampMarkers();
       drawObstacles();
       drawStoreZone();
       drawPortal();
+      drawDestructibles();
       drawCoins();
       drawEnemies();
       drawProjectiles();
@@ -1235,11 +1478,20 @@
       ctx.restore();
     }
 
+    function updateCamera() {
+      camera.x = player.x - canvas.width / 2;
+      camera.y = player.y - canvas.height / 2;
+
+      camera.x = clamp(camera.x, 0, Math.max(0, currentLevel.mapW - canvas.width));
+      camera.y = clamp(camera.y, 0, Math.max(0, currentLevel.mapH - canvas.height));
+    }
+
     function update() {
       frameCount++;
 
       updatePlayer();
       updateEnemies();
+      updateDestructibles();
       updateProjectiles();
       updateCoins();
       updateEffects();
