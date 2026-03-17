@@ -13,7 +13,7 @@
       height: 100%;
       overflow: hidden;
       font-family: Arial, Helvetica, sans-serif;
-      background: #0e0e0e;
+      background: #050816;
       color: #fff;
     }
 
@@ -22,7 +22,7 @@
       width: 100vw;
       height: 100vh;
       background:
-        radial-gradient(circle at center, #191919 0%, #101010 60%, #090909 100%);
+        radial-gradient(circle at 50% 35%, #141f46 0%, #0b1431 28%, #070d20 52%, #040712 78%, #02040a 100%);
     }
 
     .overlay {
@@ -40,8 +40,8 @@
 
     .panel {
       width: min(94vw, 560px);
-      background: #1a1a1a;
-      border: 2px solid #3a3a3a;
+      background: rgba(22, 25, 40, 0.96);
+      border: 2px solid #3a4468;
       border-radius: 18px;
       padding: 24px;
       box-shadow: 0 14px 40px rgba(0,0,0,0.45);
@@ -95,11 +95,12 @@
     }
 
     .hud-box {
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.13);
+      background: rgba(6,10,22,0.64);
+      border: 1px solid rgba(170,200,255,0.16);
       border-radius: 12px;
       padding: 10px 14px;
       min-width: 210px;
+      backdrop-filter: blur(4px);
     }
 
     .bar-wrap {
@@ -133,8 +134,8 @@
     }
 
     .upgrade-card {
-      background: #232323;
-      border: 1px solid #3d3d3d;
+      background: #23283d;
+      border: 1px solid #3d4a73;
       border-radius: 14px;
       padding: 14px;
       text-align: left;
@@ -239,8 +240,8 @@
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      initSpaceBackground();
     }
-    resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
     const keys = {};
@@ -263,6 +264,12 @@
     let waveClearTimer = 0;
     let bannerTimer = 0;
     let bannerText = "";
+    let frameCount = 0;
+
+    let starsFar = [];
+    let starsNear = [];
+    let nebulae = [];
+    let planet = null;
 
     function rand(min, max) {
       return Math.random() * (max - min) + min;
@@ -280,6 +287,56 @@
       return Math.hypot(a.x - b.x, a.y - b.y);
     }
 
+    function initSpaceBackground() {
+      starsFar = [];
+      starsNear = [];
+      nebulae = [];
+
+      const farCount = Math.max(120, Math.floor((canvas.width * canvas.height) / 9000));
+      const nearCount = Math.max(60, Math.floor((canvas.width * canvas.height) / 18000));
+
+      for (let i = 0; i < farCount; i++) {
+        starsFar.push({
+          x: rand(0, canvas.width),
+          y: rand(0, canvas.height),
+          r: rand(0.4, 1.4),
+          a: rand(0.25, 0.95),
+          twinkle: rand(0.01, 0.05)
+        });
+      }
+
+      for (let i = 0; i < nearCount; i++) {
+        starsNear.push({
+          x: rand(0, canvas.width),
+          y: rand(0, canvas.height),
+          r: rand(1.1, 2.3),
+          a: rand(0.45, 1),
+          twinkle: rand(0.015, 0.06)
+        });
+      }
+
+      for (let i = 0; i < 4; i++) {
+        nebulae.push({
+          x: rand(0, canvas.width),
+          y: rand(0, canvas.height * 0.7),
+          r: rand(120, 260),
+          color: pick([
+            "100,140,255",
+            "130,80,220",
+            "70,180,255",
+            "180,90,200"
+          ]),
+          alpha: rand(0.04, 0.10)
+        });
+      }
+
+      planet = {
+        x: canvas.width * 0.82,
+        y: canvas.height * 0.22,
+        r: Math.min(canvas.width, canvas.height) * 0.13
+      };
+    }
+
     function makePlayer(type) {
       const isSword = type === "sword";
       return {
@@ -287,7 +344,7 @@
         y: canvas.height / 2,
         radius: 18,
         classType: type,
-        color: isSword ? "#3aa0ff" : "#f5c542",
+        color: isSword ? "#4ab2ff" : "#ffd24f",
         maxHp: isSword ? 120 : 95,
         hp: isSword ? 120 : 95,
         power: isSword ? 24 : 16,
@@ -369,7 +426,6 @@
         for (let i = 0; i < tankCount; i++) spawnEnemy("tank", i * 12);
       }
 
-      // small heal between rounds, not full
       player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.12));
       bonusText.textContent = wave % 5 === 0 ? "Boss round" : "Wave start";
     }
@@ -891,10 +947,146 @@
       gameOverScreen.classList.remove("hidden");
     }
 
+    function drawSpaceBackground() {
+      for (const n of nebulae) {
+        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        grad.addColorStop(0, `rgba(${n.color},${n.alpha})`);
+        grad.addColorStop(1, `rgba(${n.color},0)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (const s of starsFar) {
+        const tw = 0.75 + Math.sin(frameCount * s.twinkle) * 0.25;
+        ctx.globalAlpha = s.a * tw;
+        ctx.fillStyle = "#dfe8ff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawPlanetBackRings();
+      drawPlanetBody();
+      drawPlanetFrontRings();
+
+      for (const s of starsNear) {
+        const tw = 0.7 + Math.sin(frameCount * s.twinkle + s.x) * 0.3;
+        ctx.globalAlpha = s.a * tw;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (s.r > 1.8) {
+          ctx.strokeStyle = "rgba(255,255,255,0.18)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(s.x - 4, s.y);
+          ctx.lineTo(s.x + 4, s.y);
+          ctx.moveTo(s.x, s.y - 4);
+          ctx.lineTo(s.x, s.y + 4);
+          ctx.stroke();
+        }
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    function drawPlanetBody() {
+      const x = planet.x;
+      const y = planet.y;
+      const r = planet.r;
+
+      const grad = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.2, x, y, r);
+      grad.addColorStop(0, "#ffd7a8");
+      grad.addColorStop(0.35, "#d89a67");
+      grad.addColorStop(0.7, "#8f5871");
+      grad.addColorStop(1, "#3e3155");
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = 0.12;
+      for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.ellipse(
+          x + rand(-r * 0.25, r * 0.25),
+          y + rand(-r * 0.2, r * 0.2),
+          rand(r * 0.2, r * 0.45),
+          rand(r * 0.06, r * 0.14),
+          rand(-0.5, 0.5),
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      const shade = ctx.createRadialGradient(x + r * 0.3, y + r * 0.25, r * 0.1, x, y, r * 1.15);
+      shade.addColorStop(0, "rgba(0,0,0,0)");
+      shade.addColorStop(1, "rgba(0,0,0,0.42)");
+      ctx.fillStyle = shade;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawPlanetBackRings() {
+      const x = planet.x;
+      const y = planet.y;
+      const r = planet.r;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.32);
+      ctx.globalAlpha = 0.24;
+      ctx.strokeStyle = "#b5c2ff";
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.65, r * 0.48, 0, Math.PI * 0.18, Math.PI * 0.82);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#d8c1ff";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.38, r * 0.38, 0, Math.PI * 0.17, Math.PI * 0.83);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPlanetFrontRings() {
+      const x = planet.x;
+      const y = planet.y;
+      const r = planet.r;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.32);
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = "#e7e2ff";
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.65, r * 0.48, 0, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#b6dcff";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.38, r * 0.38, 0, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
     function drawGrid() {
-      ctx.strokeStyle = "rgba(255,255,255,0.04)";
+      ctx.strokeStyle = "rgba(140,170,255,0.05)";
       ctx.lineWidth = 1;
-      const size = 40;
+      const size = 42;
       for (let x = 0; x < canvas.width; x += size) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -915,9 +1107,17 @@
       ctx.fillStyle = player.color;
       ctx.fill();
 
+      const glow = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius * 2.4);
+      glow.addColorStop(0, player.classType === "sword" ? "rgba(74,178,255,0.20)" : "rgba(255,210,79,0.20)");
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius * 2.4, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.range, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.strokeStyle = "rgba(180,210,255,0.08)";
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -934,6 +1134,16 @@
         }
 
         const size = enemy.size;
+
+        const glow = ctx.createRadialGradient(enemy.x, enemy.y, 0, enemy.x, enemy.y, size * 1.4);
+        glow.addColorStop(0, "rgba(255,120,120,0.18)");
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, size * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : enemy.color;
         ctx.fillRect(enemy.x - size / 2, enemy.y - size / 2, size, size);
 
         if (enemy.isBoss) {
@@ -945,7 +1155,7 @@
 
         const barW = Math.max(24, size);
         const pct = clamp(enemy.hp / enemy.maxHp, 0, 1);
-        ctx.fillStyle = "#333";
+        ctx.fillStyle = "#1b1b1b";
         ctx.fillRect(enemy.x - barW / 2, enemy.y - size / 2 - 10, barW, 5);
         ctx.fillStyle = enemy.isBoss ? "#ffd700" : "#2ecc71";
         ctx.fillRect(enemy.x - barW / 2, enemy.y - size / 2 - 10, barW * pct, 5);
@@ -954,6 +1164,14 @@
 
     function drawProjectiles() {
       for (const p of projectiles) {
+        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+        glow.addColorStop(0, "rgba(255,255,255,0.7)");
+        glow.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = "#ffffff";
@@ -963,8 +1181,15 @@
 
     function drawPickups() {
       for (const item of pickups) {
+        const pulse = 1 + Math.sin(frameCount * 0.1 + item.x) * 0.12;
+
         ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+        ctx.arc(item.x, item.y, item.radius * 2.2 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(46,204,113,0.12)";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(item.x, item.y, item.radius * pulse, 0, Math.PI * 2);
         ctx.fillStyle = "#2ecc71";
         ctx.fill();
         ctx.strokeStyle = "#b6ffcc";
@@ -1025,6 +1250,7 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawSpaceBackground();
       drawGrid();
       drawPlayer();
       drawPickups();
@@ -1033,9 +1259,8 @@
       drawEffects();
       drawDamageTexts();
       drawBanner();
+      ctx.globalAlpha = 1;
     }
-
-    let frameCount = 0;
 
     function update() {
       frameCount++;
@@ -1061,6 +1286,8 @@
       draw();
       if (running) requestAnimationFrame(loop);
     }
+
+    resizeCanvas();
   </script>
 </body>
 </html>
