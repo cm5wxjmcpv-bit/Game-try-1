@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wave Fighter</title>
+  <title>Alien Planet Fighter</title>
   <style>
     * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
       font-family: Arial, Helvetica, sans-serif;
-      background: #050816;
+      background: #111;
       color: #fff;
     }
 
@@ -21,30 +21,29 @@
       display: block;
       width: 100vw;
       height: 100vh;
-      background:
-        radial-gradient(circle at 50% 35%, #141f46 0%, #0b1431 28%, #070d20 52%, #040712 78%, #02040a 100%);
+      background: #111;
     }
 
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.82);
+      background: rgba(0,0,0,0.78);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 20;
+      z-index: 50;
       padding: 20px;
     }
 
     .hidden { display: none; }
 
     .panel {
-      width: min(94vw, 560px);
-      background: rgba(22, 25, 40, 0.96);
-      border: 2px solid #3a4468;
+      width: min(94vw, 760px);
+      background: rgba(24, 24, 24, 0.96);
+      border: 2px solid #444;
       border-radius: 18px;
       padding: 24px;
-      box-shadow: 0 14px 40px rgba(0,0,0,0.45);
+      box-shadow: 0 14px 40px rgba(0,0,0,0.4);
       text-align: center;
     }
 
@@ -52,10 +51,15 @@
       margin-top: 0;
     }
 
+    .small {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
     .btn-row {
       display: flex;
-      flex-wrap: wrap;
       gap: 12px;
+      flex-wrap: wrap;
       justify-content: center;
       margin-top: 16px;
     }
@@ -64,11 +68,11 @@
       border: none;
       border-radius: 12px;
       padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
       background: #2d7ef7;
       color: #fff;
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
       transition: transform 0.12s ease, opacity 0.12s ease;
     }
 
@@ -89,24 +93,24 @@
       z-index: 10;
       display: flex;
       justify-content: space-between;
-      flex-wrap: wrap;
       gap: 10px;
+      flex-wrap: wrap;
       pointer-events: none;
     }
 
     .hud-box {
-      background: rgba(6,10,22,0.64);
-      border: 1px solid rgba(170,200,255,0.16);
+      min-width: 220px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.14);
       border-radius: 12px;
       padding: 10px 14px;
-      min-width: 210px;
       backdrop-filter: blur(4px);
     }
 
     .bar-wrap {
-      width: 210px;
+      width: 220px;
       height: 14px;
-      background: #333;
+      background: #2f2f2f;
       border-radius: 999px;
       overflow: hidden;
       margin-top: 6px;
@@ -119,35 +123,38 @@
     }
 
     #hpBar { background: #2ecc71; }
-    #xpBar { background: #f1c40f; }
 
-    .small {
-      font-size: 14px;
-      opacity: 0.85;
-    }
-
-    .upgrade-grid {
+    #storeGrid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 12px;
-      margin-top: 16px;
+      margin-top: 14px;
     }
 
-    .upgrade-card {
-      background: #23283d;
-      border: 1px solid #3d4a73;
+    .store-card {
+      text-align: left;
+      background: #232323;
+      border: 1px solid #3d3d3d;
       border-radius: 14px;
       padding: 14px;
-      text-align: left;
     }
 
-    .upgrade-card h3 {
+    .store-card h3 {
       margin-bottom: 8px;
     }
 
-    .upgrade-card p {
+    .store-card p {
       margin-bottom: 10px;
       color: #ddd;
+    }
+
+    .store-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 8px;
     }
   </style>
 </head>
@@ -157,34 +164,34 @@
   <div id="hud">
     <div class="hud-box">
       <div><b>Class:</b> <span id="classText">-</span></div>
-      <div><b>Wave:</b> <span id="waveText">0</span></div>
+      <div><b>Level:</b> <span id="levelText">1</span> / 5</div>
+      <div><b>Area:</b> <span id="areaText">-</span></div>
       <div><b>Enemies Left:</b> <span id="enemiesText">0</span></div>
-      <div><b>Kills:</b> <span id="killsText">0</span></div>
     </div>
 
     <div class="hud-box">
       <div><b>HP:</b> <span id="hpText">0 / 0</span></div>
       <div class="bar-wrap"><div class="bar" id="hpBar"></div></div>
-      <div style="margin-top:8px;"><b>XP:</b> <span id="xpText">0 / 0</span></div>
-      <div class="bar-wrap"><div class="bar" id="xpBar"></div></div>
+      <div style="margin-top:8px;"><b>Money:</b> $<span id="moneyText">0</span></div>
+      <div><b>Damage:</b> <span id="powerText">0</span></div>
     </div>
 
     <div class="hud-box">
-      <div><b>Power:</b> <span id="powerText">0</span></div>
       <div><b>Attack Speed:</b> <span id="attackText">0</span></div>
       <div><b>Move Speed:</b> <span id="speedText">0</span></div>
-      <div><b>Wave Bonus:</b> <span id="bonusText">-</span></div>
+      <div><b>Armor:</b> <span id="armorText">0%</span></div>
+      <div><b>Portal:</b> <span id="portalText">Locked</span></div>
     </div>
   </div>
 
   <div id="menu" class="overlay">
     <div class="panel">
-      <h1>Wave Fighter</h1>
-      <p>Simple wave survival game.</p>
+      <h1>Alien Planet Fighter</h1>
+      <p>Fight through 5 long alien levels, clear enemy camps, reach the portal, then buy upgrades at the store.</p>
       <p class="small">
         Move with <b>W A S D</b> or <b>Arrow Keys</b>.<br>
         Attacks are automatic.<br>
-        Survive waves, beat bosses, and pick upgrades.
+        Enemies stay in their area until you get close.
       </p>
       <div class="btn-row">
         <button id="swordBtn">Sword Class</button>
@@ -193,20 +200,40 @@
     </div>
   </div>
 
-  <div id="upgradeScreen" class="overlay hidden">
+  <div id="storeScreen" class="overlay hidden">
     <div class="panel">
-      <h2>Choose an Upgrade</h2>
-      <p>Wave cleared. Pick one to continue.</p>
-      <div id="upgradeList" class="upgrade-grid"></div>
+      <div class="store-top">
+        <div>
+          <h2 style="margin-bottom:6px;">Field Store</h2>
+          <p style="margin-bottom:0;">Buy upgrades before entering the next portal.</p>
+        </div>
+        <div style="font-size:20px; font-weight:700;">Money: $<span id="storeMoneyText">0</span></div>
+      </div>
+
+      <div id="storeGrid"></div>
+
+      <div class="btn-row">
+        <button id="nextLevelBtn">Enter Next Portal</button>
+      </div>
     </div>
   </div>
 
   <div id="gameOverScreen" class="overlay hidden">
     <div class="panel">
       <h2>Game Over</h2>
-      <p id="gameOverText">You made it to wave 1.</p>
+      <p id="gameOverText">You reached level 1.</p>
       <div class="btn-row">
         <button id="restartBtn">Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="winScreen" class="overlay hidden">
+    <div class="panel">
+      <h2>You Finished All 5 Levels</h2>
+      <p id="winText">You survived the alien planet.</p>
+      <div class="btn-row">
+        <button id="playAgainBtn">Play Again</button>
       </div>
     </div>
   </div>
@@ -216,314 +243,367 @@
     const ctx = canvas.getContext("2d");
 
     const menu = document.getElementById("menu");
+    const storeScreen = document.getElementById("storeScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const winScreen = document.getElementById("winScreen");
+
     const swordBtn = document.getElementById("swordBtn");
     const shooterBtn = document.getElementById("shooterBtn");
-    const upgradeScreen = document.getElementById("upgradeScreen");
-    const upgradeList = document.getElementById("upgradeList");
-    const gameOverScreen = document.getElementById("gameOverScreen");
-    const gameOverText = document.getElementById("gameOverText");
+    const nextLevelBtn = document.getElementById("nextLevelBtn");
     const restartBtn = document.getElementById("restartBtn");
+    const playAgainBtn = document.getElementById("playAgainBtn");
 
     const classText = document.getElementById("classText");
-    const waveText = document.getElementById("waveText");
+    const levelText = document.getElementById("levelText");
+    const areaText = document.getElementById("areaText");
     const enemiesText = document.getElementById("enemiesText");
-    const killsText = document.getElementById("killsText");
     const hpText = document.getElementById("hpText");
     const hpBar = document.getElementById("hpBar");
-    const xpText = document.getElementById("xpText");
-    const xpBar = document.getElementById("xpBar");
+    const moneyText = document.getElementById("moneyText");
     const powerText = document.getElementById("powerText");
     const attackText = document.getElementById("attackText");
     const speedText = document.getElementById("speedText");
-    const bonusText = document.getElementById("bonusText");
+    const armorText = document.getElementById("armorText");
+    const portalText = document.getElementById("portalText");
+    const storeMoneyText = document.getElementById("storeMoneyText");
+    const storeGrid = document.getElementById("storeGrid");
+    const gameOverText = document.getElementById("gameOverText");
+    const winText = document.getElementById("winText");
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      initSpaceBackground();
     }
+    resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
     const keys = {};
-    window.addEventListener("keydown", e => { keys[e.key.toLowerCase()] = true; });
-    window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
-
-    let running = false;
-    let pausedForUpgrade = false;
-    let wave = 0;
-    let kills = 0;
-
-    let enemies = [];
-    let projectiles = [];
-    let pickups = [];
-    let damageTexts = [];
-    let effects = [];
-
-    let player = null;
-    let attackTimer = 0;
-    let waveClearTimer = 0;
-    let bannerTimer = 0;
-    let bannerText = "";
-    let frameCount = 0;
-
-    let starsFar = [];
-    let starsNear = [];
-    let nebulae = [];
-    let planet = null;
+    window.addEventListener("keydown", e => {
+      keys[e.key.toLowerCase()] = true;
+    });
+    window.addEventListener("keyup", e => {
+      keys[e.key.toLowerCase()] = false;
+    });
 
     function rand(min, max) {
       return Math.random() * (max - min) + min;
-    }
-
-    function pick(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
     }
 
     function clamp(v, min, max) {
       return Math.max(min, Math.min(max, v));
     }
 
-    function distance(a, b) {
-      return Math.hypot(a.x - b.x, a.y - b.y);
+    function dist(ax, ay, bx, by) {
+      return Math.hypot(ax - bx, ay - by);
     }
 
-    function initSpaceBackground() {
-      starsFar = [];
-      starsNear = [];
-      nebulae = [];
-
-      const farCount = Math.max(120, Math.floor((canvas.width * canvas.height) / 9000));
-      const nearCount = Math.max(60, Math.floor((canvas.width * canvas.height) / 18000));
-
-      for (let i = 0; i < farCount; i++) {
-        starsFar.push({
-          x: rand(0, canvas.width),
-          y: rand(0, canvas.height),
-          r: rand(0.4, 1.4),
-          a: rand(0.25, 0.95),
-          twinkle: rand(0.01, 0.05)
-        });
-      }
-
-      for (let i = 0; i < nearCount; i++) {
-        starsNear.push({
-          x: rand(0, canvas.width),
-          y: rand(0, canvas.height),
-          r: rand(1.1, 2.3),
-          a: rand(0.45, 1),
-          twinkle: rand(0.015, 0.06)
-        });
-      }
-
-      for (let i = 0; i < 4; i++) {
-        nebulae.push({
-          x: rand(0, canvas.width),
-          y: rand(0, canvas.height * 0.7),
-          r: rand(120, 260),
-          color: pick([
-            "100,140,255",
-            "130,80,220",
-            "70,180,255",
-            "180,90,200"
-          ]),
-          alpha: rand(0.04, 0.10)
-        });
-      }
-
-      planet = {
-        x: canvas.width * 0.82,
-        y: canvas.height * 0.22,
-        r: Math.min(canvas.width, canvas.height) * 0.13
-      };
+    function circleRectCollision(cx, cy, radius, rect) {
+      const closestX = clamp(cx, rect.x, rect.x + rect.w);
+      const closestY = clamp(cy, rect.y, rect.y + rect.h);
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return (dx * dx + dy * dy) < (radius * radius);
     }
+
+    function resolveCircleRectCollision(entity, rect) {
+      const closestX = clamp(entity.x, rect.x, rect.x + rect.w);
+      const closestY = clamp(entity.y, rect.y, rect.y + rect.h);
+      let dx = entity.x - closestX;
+      let dy = entity.y - closestY;
+      let d2 = dx * dx + dy * dy;
+
+      if (d2 >= entity.radius * entity.radius) return;
+
+      if (d2 === 0) {
+        const left = Math.abs(entity.x - rect.x);
+        const right = Math.abs(entity.x - (rect.x + rect.w));
+        const top = Math.abs(entity.y - rect.y);
+        const bottom = Math.abs(entity.y - (rect.y + rect.h));
+        const minEdge = Math.min(left, right, top, bottom);
+
+        if (minEdge === left) entity.x = rect.x - entity.radius;
+        else if (minEdge === right) entity.x = rect.x + rect.w + entity.radius;
+        else if (minEdge === top) entity.y = rect.y - entity.radius;
+        else entity.y = rect.y + rect.h + entity.radius;
+        return;
+      }
+
+      const d = Math.sqrt(d2);
+      const overlap = entity.radius - d;
+      entity.x += (dx / d) * overlap;
+      entity.y += (dy / d) * overlap;
+    }
+
+    let running = false;
+    let pausedForStore = false;
+    let frameCount = 0;
+
+    let currentLevelIndex = 0;
+    let currentLevel = null;
+    let player = null;
+    let enemies = [];
+    let projectiles = [];
+    let coins = [];
+    let effects = [];
+    let damageTexts = [];
+    let attackTimer = 0;
+    let camera = { x: 0, y: 0 };
+
+    const levels = [
+      {
+        name: "Green Mire",
+        bg: "#59743b",
+        ground2: "#6f8f49",
+        accent: "#92b85a",
+        obstacleColor: "#41552d",
+        slimeColor: "#89d15b",
+        mapW: 3800,
+        mapH: 1700,
+        enemyHp: 44,
+        enemyDamage: 12,
+        enemySpeed: 1.25,
+        enemyCount: 26,
+        moneyDrop: [8, 13]
+      },
+      {
+        name: "Crimson Flats",
+        bg: "#7b433d",
+        ground2: "#9a5c53",
+        accent: "#d08f76",
+        obstacleColor: "#5c2a25",
+        slimeColor: "#f1b16f",
+        mapW: 4100,
+        mapH: 1800,
+        enemyHp: 62,
+        enemyDamage: 16,
+        enemySpeed: 1.35,
+        enemyCount: 30,
+        moneyDrop: [10, 15]
+      },
+      {
+        name: "Blue Fungal Basin",
+        bg: "#34546c",
+        ground2: "#467391",
+        accent: "#7db5d8",
+        obstacleColor: "#203949",
+        slimeColor: "#9de5ff",
+        mapW: 4400,
+        mapH: 1900,
+        enemyHp: 86,
+        enemyDamage: 20,
+        enemySpeed: 1.45,
+        enemyCount: 34,
+        moneyDrop: [12, 18]
+      },
+      {
+        name: "Ash Stone Valley",
+        bg: "#59555b",
+        ground2: "#706b73",
+        accent: "#bdb8c1",
+        obstacleColor: "#363238",
+        slimeColor: "#d8c86a",
+        mapW: 4700,
+        mapH: 2000,
+        enemyHp: 118,
+        enemyDamage: 24,
+        enemySpeed: 1.58,
+        enemyCount: 38,
+        moneyDrop: [15, 22]
+      },
+      {
+        name: "Void Bloom Ridge",
+        bg: "#4e3265",
+        ground2: "#664481",
+        accent: "#c784ff",
+        obstacleColor: "#311d42",
+        slimeColor: "#ff89ff",
+        mapW: 5200,
+        mapH: 2100,
+        enemyHp: 160,
+        enemyDamage: 30,
+        enemySpeed: 1.72,
+        enemyCount: 42,
+        moneyDrop: [18, 26]
+      }
+    ];
 
     function makePlayer(type) {
       const isSword = type === "sword";
       return {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
+        x: 120,
+        y: 850,
         radius: 18,
         classType: type,
         color: isSword ? "#4ab2ff" : "#ffd24f",
-        maxHp: isSword ? 120 : 95,
-        hp: isSword ? 120 : 95,
-        power: isSword ? 24 : 16,
-        speed: isSword ? 3.6 : 3.9,
-        range: isSword ? 72 : 280,
-        attackCooldown: isSword ? 30 : 18,
-        projectileSpeed: 8.5,
-        projectileSize: 6,
-        contactDamageCooldown: 0,
-        xp: 0,
-        xpToNext: 30,
-        level: 1,
+        maxHp: isSword ? 140 : 110,
+        hp: isSword ? 140 : 110,
+        power: isSword ? 26 : 18,
+        speed: isSword ? 3.6 : 4.0,
+        range: isSword ? 78 : 320,
+        attackCooldown: isSword ? 24 : 16,
+        projectileSpeed: 11,
+        projectileSize: 5,
         projectileCount: 1,
-        swordArcBonus: 0,
-        regen: 0,
+        swordRangeBonus: 0,
         armor: 0,
-        critChance: 0.05
+        money: 0,
+        contactDamageCooldown: 0
       };
     }
 
-    function resetState(type) {
-      player = makePlayer(type);
-      running = true;
-      pausedForUpgrade = false;
-      wave = 0;
-      kills = 0;
-      enemies = [];
-      projectiles = [];
-      pickups = [];
-      damageTexts = [];
-      effects = [];
-      attackTimer = 0;
-      waveClearTimer = 0;
-      bannerTimer = 0;
-      bannerText = "";
-      classText.textContent = type === "sword" ? "Sword" : "Shooter";
-      bonusText.textContent = "None";
-    }
-
     function startGame(type) {
-      resetState(type);
+      player = makePlayer(type);
+      currentLevelIndex = 0;
+      pausedForStore = false;
+      running = true;
+      classText.textContent = type === "sword" ? "Sword" : "Shooter";
       menu.classList.add("hidden");
       gameOverScreen.classList.add("hidden");
-      upgradeScreen.classList.add("hidden");
-      startNextWave();
+      winScreen.classList.add("hidden");
+      storeScreen.classList.add("hidden");
+      loadLevel(currentLevelIndex);
       loop();
-    }
-
-    function restartGame() {
-      running = false;
-      pausedForUpgrade = false;
-      gameOverScreen.classList.add("hidden");
-      menu.classList.remove("hidden");
     }
 
     swordBtn.addEventListener("click", () => startGame("sword"));
     shooterBtn.addEventListener("click", () => startGame("shooter"));
-    restartBtn.addEventListener("click", restartGame);
+    restartBtn.addEventListener("click", () => menu.classList.remove("hidden") || gameOverScreen.classList.add("hidden"));
+    playAgainBtn.addEventListener("click", () => menu.classList.remove("hidden") || winScreen.classList.add("hidden"));
 
-    function startNextWave() {
-      wave++;
-      bannerText = wave % 5 === 0 ? `Boss Wave ${wave}` : `Wave ${wave}`;
-      bannerTimer = 120;
+    function buildObstacles(spec) {
+      const obs = [];
 
-      const normalCount = Math.min(3 + wave * 2, 30);
-      const runnerCount = wave >= 3 ? Math.floor(wave / 2) : 0;
-      const tankCount = wave >= 4 ? Math.floor(wave / 3) : 0;
+      // top and bottom canyon walls
+      obs.push({ x: 260, y: 0, w: 280, h: 520, type: "rock" });
+      obs.push({ x: 260, y: spec.mapH - 520, w: 280, h: 520, type: "rock" });
 
-      enemies.length = 0;
+      obs.push({ x: 760, y: 0, w: 240, h: 420, type: "rock" });
+      obs.push({ x: 760, y: spec.mapH - 520, w: 240, h: 520, type: "rock" });
 
-      if (wave % 5 === 0) {
-        spawnBoss();
-        for (let i = 0; i < Math.floor(wave * 0.8); i++) {
-          spawnEnemy("normal", i * 8);
+      obs.push({ x: 1240, y: 220, w: 260, h: 540, type: "rock" });
+      obs.push({ x: 1240, y: 980, w: 260, h: 560, type: "rock" });
+
+      obs.push({ x: 1760, y: 0, w: 240, h: 460, type: "rock" });
+      obs.push({ x: 1760, y: spec.mapH - 620, w: 240, h: 620, type: "rock" });
+
+      obs.push({ x: 2280, y: 240, w: 280, h: 520, type: "rock" });
+      obs.push({ x: 2280, y: 980, w: 280, h: 620, type: "rock" });
+
+      obs.push({ x: 2860, y: 0, w: 220, h: 400, type: "rock" });
+      obs.push({ x: 2860, y: spec.mapH - 700, w: 220, h: 700, type: "rock" });
+
+      obs.push({ x: 3340, y: 180, w: 260, h: 500, type: "rock" });
+      obs.push({ x: 3340, y: 1010, w: 260, h: 520, type: "rock" });
+
+      // side objects
+      obs.push({ x: 580, y: 760, w: 140, h: 140, type: "pillar" });
+      obs.push({ x: 1540, y: 760, w: 160, h: 160, type: "pillar" });
+      obs.push({ x: 2580, y: 770, w: 150, h: 150, type: "pillar" });
+      obs.push({ x: 3660, y: 740, w: 170, h: 170, type: "pillar" });
+
+      // slime pools as blockers
+      obs.push({ x: 980, y: 720, w: 130, h: 220, type: "slime" });
+      obs.push({ x: 2040, y: 710, w: 140, h: 240, type: "slime" });
+      obs.push({ x: 3140, y: 700, w: 130, h: 240, type: "slime" });
+
+      if (spec.mapW > 4200) {
+        obs.push({ x: 4120, y: 220, w: 220, h: 510, type: "rock" });
+        obs.push({ x: 4120, y: 1030, w: 220, h: 540, type: "rock" });
+        obs.push({ x: 4440, y: 770, w: 140, h: 140, type: "pillar" });
+        obs.push({ x: 3900, y: 720, w: 120, h: 220, type: "slime" });
+      }
+
+      return obs;
+    }
+
+    function buildEnemyCamps(spec) {
+      const camps = [];
+      const laneY = spec.mapH / 2;
+
+      const campPositions = [];
+      let x = 520;
+      while (x < spec.mapW - 360) {
+        campPositions.push(x);
+        x += 270;
+      }
+
+      let enemiesLeft = spec.enemyCount;
+      for (let i = 0; i < campPositions.length && enemiesLeft > 0; i++) {
+        const campX = campPositions[i];
+        const count = Math.min(3 + (i % 3), enemiesLeft);
+
+        for (let j = 0; j < count; j++) {
+          const ox = rand(-70, 70);
+          const oy = rand(-170, 170);
+          camps.push({
+            x: campX + ox,
+            y: laneY + oy,
+            homeX: campX + ox,
+            homeY: laneY + oy,
+            radius: 16,
+            size: 26,
+            hp: spec.enemyHp,
+            maxHp: spec.enemyHp,
+            speed: spec.enemySpeed,
+            damage: spec.enemyDamage,
+            aggro: false,
+            aggroRange: 220,
+            leashRange: 340,
+            money: Math.floor(rand(spec.moneyDrop[0], spec.moneyDrop[1] + 1)),
+            hitFlash: 0
+          });
         }
-      } else {
-        for (let i = 0; i < normalCount; i++) spawnEnemy("normal", i * 5);
-        for (let i = 0; i < runnerCount; i++) spawnEnemy("runner", i * 10);
-        for (let i = 0; i < tankCount; i++) spawnEnemy("tank", i * 12);
+
+        enemiesLeft -= count;
       }
 
-      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.12));
-      bonusText.textContent = wave % 5 === 0 ? "Boss round" : "Wave start";
+      return camps;
     }
 
-    function randomSpawnEdge() {
-      const side = Math.floor(Math.random() * 4);
-      const margin = 50;
-      let x, y;
-      if (side === 0) {
-        x = rand(0, canvas.width);
-        y = -margin;
-      } else if (side === 1) {
-        x = canvas.width + margin;
-        y = rand(0, canvas.height);
-      } else if (side === 2) {
-        x = rand(0, canvas.width);
-        y = canvas.height + margin;
-      } else {
-        x = -margin;
-        y = rand(0, canvas.height);
+    function loadLevel(index) {
+      currentLevelIndex = index;
+      currentLevel = structuredClone(levels[index]);
+      currentLevel.obstacles = buildObstacles(currentLevel);
+      currentLevel.portal = { x: currentLevel.mapW - 140, y: currentLevel.mapH / 2, radius: 40, open: false };
+      currentLevel.storeZone = { x: currentLevel.mapW - 300, y: currentLevel.mapH / 2 - 140, w: 120, h: 280 };
+      currentLevel.decor = buildDecor(currentLevel);
+      enemies = buildEnemyCamps(currentLevel);
+      projectiles = [];
+      coins = [];
+      effects = [];
+      damageTexts = [];
+
+      player.x = 120;
+      player.y = currentLevel.mapH / 2;
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.15));
+
+      camera.x = 0;
+      camera.y = 0;
+      attackTimer = 0;
+      pausedForStore = false;
+      running = true;
+      storeScreen.classList.add("hidden");
+      levelText.textContent = String(index + 1);
+      areaText.textContent = currentLevel.name;
+    }
+
+    function buildDecor(spec) {
+      const arr = [];
+      for (let i = 0; i < 140; i++) {
+        arr.push({
+          kind: i % 4 === 0 ? "plant" : "stone",
+          x: rand(40, spec.mapW - 40),
+          y: rand(40, spec.mapH - 40),
+          r: rand(8, 24)
+        });
       }
-      return { x, y };
-    }
-
-    function enemyStatsByType(type) {
-      const waveScale = 1 + (wave - 1) * 0.18;
-
-      if (type === "runner") {
-        return {
-          type,
-          size: 18,
-          color: "#ff9f43",
-          hp: Math.round(20 * waveScale),
-          speed: 1.9 + wave * 0.09,
-          damage: 10 + Math.floor(wave * 0.8),
-          xp: 10
-        };
-      }
-
-      if (type === "tank") {
-        return {
-          type,
-          size: 32,
-          color: "#9b59b6",
-          hp: Math.round(60 * waveScale + wave * 8),
-          speed: 0.8 + wave * 0.03,
-          damage: 18 + Math.floor(wave * 1.2),
-          xp: 22
-        };
-      }
-
-      return {
-        type: "normal",
-        size: 24,
-        color: "#e74c3c",
-        hp: Math.round(30 * waveScale + wave * 4),
-        speed: 1.1 + wave * 0.06,
-        damage: 12 + Math.floor(wave * 0.9),
-        xp: 14
-      };
-    }
-
-    function spawnEnemy(type = "normal", delay = 0) {
-      const pos = randomSpawnEdge();
-      const s = enemyStatsByType(type);
-      enemies.push({
-        x: pos.x,
-        y: pos.y,
-        ...s,
-        maxHp: s.hp,
-        spawnDelay: delay,
-        hitFlash: 0,
-        isBoss: false
-      });
-    }
-
-    function spawnBoss() {
-      const pos = randomSpawnEdge();
-      const hp = Math.round(220 + wave * 65);
-      enemies.push({
-        x: pos.x,
-        y: pos.y,
-        type: "boss",
-        size: 56,
-        color: "#ffffff",
-        hp,
-        maxHp: hp,
-        speed: 0.95 + wave * 0.03,
-        damage: 26 + Math.floor(wave * 1.8),
-        xp: 90,
-        spawnDelay: 0,
-        hitFlash: 0,
-        isBoss: true
-      });
+      return arr;
     }
 
     function updatePlayer() {
-      let dx = 0, dy = 0;
+      let dx = 0;
+      let dy = 0;
+
       if (keys["w"] || keys["arrowup"]) dy -= 1;
       if (keys["s"] || keys["arrowdown"]) dy += 1;
       if (keys["a"] || keys["arrowleft"]) dx -= 1;
@@ -538,155 +618,159 @@
       player.x += dx * player.speed;
       player.y += dy * player.speed;
 
-      player.x = clamp(player.x, player.radius, canvas.width - player.radius);
-      player.y = clamp(player.y, player.radius, canvas.height - player.radius);
+      player.x = clamp(player.x, player.radius, currentLevel.mapW - player.radius);
+      player.y = clamp(player.y, player.radius, currentLevel.mapH - player.radius);
+
+      for (const obstacle of currentLevel.obstacles) {
+        resolveCircleRectCollision(player, obstacle);
+      }
 
       if (player.contactDamageCooldown > 0) player.contactDamageCooldown--;
 
-      if (player.regen > 0 && frameCount % 60 === 0) {
-        player.hp = Math.min(player.maxHp, player.hp + player.regen);
-      }
-
       attackTimer--;
       if (attackTimer <= 0) {
-        performAutoAttack();
+        autoAttack();
         attackTimer = Math.max(6, Math.round(player.attackCooldown));
       }
     }
 
-    function nearestEnemies(count = 1) {
-      return enemies
-        .filter(e => e.spawnDelay <= 0 && e.hp > 0)
-        .sort((a, b) => distance(player, a) - distance(player, b))
-        .slice(0, count);
-    }
+    function autoAttack() {
+      const targets = enemies.filter(e => e.hp > 0 && dist(player.x, player.y, e.x, e.y) <= player.range);
 
-    function applyDamage(enemy, baseDamage) {
-      let damage = baseDamage;
-      const isCrit = Math.random() < player.critChance;
-      if (isCrit) damage = Math.round(damage * 1.75);
-
-      enemy.hp -= damage;
-      enemy.hitFlash = 4;
-
-      damageTexts.push({
-        x: enemy.x,
-        y: enemy.y - enemy.size / 2 - 6,
-        text: isCrit ? `CRIT ${damage}` : `-${damage}`,
-        life: 30,
-        crit: isCrit
-      });
-    }
-
-    function performAutoAttack() {
-      const targets = enemies.filter(e => e.spawnDelay <= 0 && e.hp > 0);
       if (!targets.length) return;
 
       if (player.classType === "sword") {
-        const hitRange = player.range + player.swordArcBonus;
-        let hitCount = 0;
-        for (const enemy of targets) {
-          if (distance(player, enemy) <= hitRange) {
+        const range = player.range + player.swordRangeBonus;
+        let didHit = false;
+
+        for (const enemy of enemies) {
+          if (enemy.hp <= 0) continue;
+          if (dist(player.x, player.y, enemy.x, enemy.y) <= range) {
             applyDamage(enemy, player.power);
-            hitCount++;
+            didHit = true;
           }
         }
 
-        if (hitCount > 0) {
+        if (didHit) {
           effects.push({
             type: "swing",
             x: player.x,
             y: player.y,
-            radius: hitRange,
+            radius: range,
             life: 8
           });
         }
       } else {
-        const targetsToShoot = nearestEnemies(player.projectileCount);
-        for (const target of targetsToShoot) {
-          if (distance(player, target) <= player.range) {
-            const angle = Math.atan2(target.y - player.y, target.x - player.x);
-            projectiles.push({
-              x: player.x,
-              y: player.y,
-              vx: Math.cos(angle) * player.projectileSpeed,
-              vy: Math.sin(angle) * player.projectileSpeed,
-              size: player.projectileSize,
-              damage: player.power,
-              life: 90
-            });
-          }
+        const sorted = targets
+          .slice()
+          .sort((a, b) => dist(player.x, player.y, a.x, a.y) - dist(player.x, player.y, b.x, b.y))
+          .slice(0, player.projectileCount);
+
+        for (const target of sorted) {
+          const angle = Math.atan2(target.y - player.y, target.x - player.x);
+          projectiles.push({
+            x: player.x,
+            y: player.y,
+            vx: Math.cos(angle) * player.projectileSpeed,
+            vy: Math.sin(angle) * player.projectileSpeed,
+            size: player.projectileSize,
+            damage: player.power,
+            life: 90
+          });
         }
       }
     }
 
+    function applyDamage(enemy, amount) {
+      enemy.hp -= amount;
+      enemy.hitFlash = 4;
+
+      damageTexts.push({
+        x: enemy.x,
+        y: enemy.y - 18,
+        text: "-" + amount,
+        life: 28,
+        hurt: false
+      });
+    }
+
     function updateEnemies() {
       for (const enemy of enemies) {
-        if (enemy.spawnDelay > 0) {
-          enemy.spawnDelay--;
-          continue;
-        }
-
+        if (enemy.hp <= 0) continue;
         if (enemy.hitFlash > 0) enemy.hitFlash--;
 
-        const dx = player.x - enemy.x;
-        const dy = player.y - enemy.y;
-        const dist = Math.hypot(dx, dy) || 1;
+        const dToPlayer = dist(player.x, player.y, enemy.x, enemy.y);
 
-        enemy.x += (dx / dist) * enemy.speed;
-        enemy.y += (dy / dist) * enemy.speed;
+        if (!enemy.aggro && dToPlayer <= enemy.aggroRange) {
+          enemy.aggro = true;
+        }
 
-        const touchDist = player.radius + enemy.size / 2;
-        if (dist < touchDist && player.contactDamageCooldown <= 0) {
-          const rawDamage = enemy.damage;
-          const finalDamage = Math.max(1, Math.round(rawDamage * (1 - player.armor)));
-          player.hp -= finalDamage;
-          player.contactDamageCooldown = enemy.isBoss ? 12 : 18;
+        let tx = enemy.homeX;
+        let ty = enemy.homeY;
+
+        if (enemy.aggro) {
+          const dHomeToPlayer = dist(player.x, player.y, enemy.homeX, enemy.homeY);
+          if (dHomeToPlayer > enemy.leashRange) {
+            enemy.aggro = false;
+          } else {
+            tx = player.x;
+            ty = player.y;
+          }
+        }
+
+        let dx = tx - enemy.x;
+        let dy = ty - enemy.y;
+        const len = Math.hypot(dx, dy);
+
+        if (len > 1) {
+          dx /= len;
+          dy /= len;
+          enemy.x += dx * enemy.speed;
+          enemy.y += dy * enemy.speed;
+        }
+
+        for (const obstacle of currentLevel.obstacles) {
+          resolveCircleRectCollision(enemy, obstacle);
+        }
+
+        const touch = player.radius + enemy.radius;
+        const d = dist(player.x, player.y, enemy.x, enemy.y);
+
+        if (d <= touch && player.contactDamageCooldown <= 0) {
+          const dealt = Math.max(1, Math.round(enemy.damage * (1 - player.armor)));
+          player.hp -= dealt;
+          player.contactDamageCooldown = 18;
 
           damageTexts.push({
             x: player.x,
-            y: player.y - 28,
-            text: `-${finalDamage}`,
-            life: 28,
-            crit: false,
+            y: player.y - 26,
+            text: "-" + dealt,
+            life: 24,
             hurt: true
           });
         }
       }
 
       const dead = enemies.filter(e => e.hp <= 0);
-      for (const enemy of dead) onEnemyKilled(enemy);
+      for (const enemy of dead) {
+        spawnCoins(enemy);
+      }
 
       enemies = enemies.filter(e => e.hp > 0);
-    }
 
-    function onEnemyKilled(enemy) {
-      kills++;
-      gainXp(enemy.xp);
-
-      if (Math.random() < 0.14 || enemy.isBoss) {
-        pickups.push({
-          x: enemy.x,
-          y: enemy.y,
-          radius: enemy.isBoss ? 12 : 8,
-          heal: enemy.isBoss ? 28 : 14,
-          life: enemy.isBoss ? 600 : 420
-        });
+      if (enemies.length === 0) {
+        currentLevel.portal.open = true;
       }
     }
 
-    function gainXp(amount) {
-      player.xp += amount;
-      while (player.xp >= player.xpToNext) {
-        player.xp -= player.xpToNext;
-        player.level++;
-        player.xpToNext = Math.round(player.xpToNext * 1.25);
-        player.power += 2;
-        player.maxHp += 6;
-        player.hp = Math.min(player.maxHp, player.hp + 10);
-        bannerText = `Level Up ${player.level}`;
-        bannerTimer = 70;
-      }
+    function spawnCoins(enemy) {
+      coins.push({
+        x: enemy.x,
+        y: enemy.y,
+        radius: 9,
+        amount: enemy.money,
+        life: 900
+      });
     }
 
     function updateProjectiles() {
@@ -695,15 +779,18 @@
         p.y += p.vy;
         p.life--;
 
+        for (const obstacle of currentLevel.obstacles) {
+          if (circleRectCollision(p.x, p.y, p.size, obstacle)) {
+            p.life = 0;
+            break;
+          }
+        }
+
+        if (p.life <= 0) continue;
+
         for (const enemy of enemies) {
-          if (enemy.spawnDelay > 0 || enemy.hp <= 0) continue;
-          const half = enemy.size / 2;
-          if (
-            p.x >= enemy.x - half &&
-            p.x <= enemy.x + half &&
-            p.y >= enemy.y - half &&
-            p.y <= enemy.y + half
-          ) {
+          if (enemy.hp <= 0) continue;
+          if (dist(p.x, p.y, enemy.x, enemy.y) <= p.size + enemy.radius) {
             applyDamage(enemy, p.damage);
             p.life = 0;
             break;
@@ -713,27 +800,25 @@
 
       projectiles = projectiles.filter(p =>
         p.life > 0 &&
-        p.x > -20 && p.x < canvas.width + 20 &&
-        p.y > -20 && p.y < canvas.height + 20
+        p.x >= -10 &&
+        p.x <= currentLevel.mapW + 10 &&
+        p.y >= -10 &&
+        p.y <= currentLevel.mapH + 10
       );
     }
 
-    function updatePickups() {
-      for (const item of pickups) {
-        item.life--;
-        if (distance(player, item) <= player.radius + item.radius + 4) {
-          player.hp = Math.min(player.maxHp, player.hp + item.heal);
-          effects.push({
-            type: "heal",
-            x: item.x,
-            y: item.y,
-            radius: 18,
-            life: 20
-          });
-          item.life = 0;
+    function updateCoins() {
+      for (const coin of coins) {
+        coin.life--;
+
+        if (dist(player.x, player.y, coin.x, coin.y) <= player.radius + coin.radius + 6) {
+          player.money += coin.amount;
+          effects.push({ type: "coin", x: coin.x, y: coin.y, life: 16 });
+          coin.life = 0;
         }
       }
-      pickups = pickups.filter(p => p.life > 0);
+
+      coins = coins.filter(c => c.life > 0);
     }
 
     function updateEffects() {
@@ -743,456 +828,339 @@
 
     function updateDamageTexts() {
       for (const t of damageTexts) {
-        t.y -= 0.6;
+        t.y -= 0.55;
         t.life--;
       }
       damageTexts = damageTexts.filter(t => t.life > 0);
     }
 
-    function maybeOpenUpgradeScreen() {
-      const living = enemies.filter(e => e.hp > 0).length;
-      if (living === 0) {
-        waveClearTimer++;
-        if (waveClearTimer > 45) {
-          waveClearTimer = 0;
-          if (wave % 5 === 0) {
-            offerUpgrades(2, true);
-          } else {
-            offerUpgrades(3, false);
-          }
-        }
-      } else {
-        waveClearTimer = 0;
+    function updatePortalAndStore() {
+      if (!currentLevel.portal.open) return;
+
+      const dPortal = dist(player.x, player.y, currentLevel.portal.x, currentLevel.portal.y);
+      if (dPortal <= player.radius + currentLevel.portal.radius) {
+        openStore();
       }
     }
 
-    function upgradePool() {
-      return [
-        {
-          name: "Power Boost",
-          desc: "+6 damage",
-          apply() {
-            player.power += 6;
-            bonusText.textContent = "Power +6";
-          }
-        },
-        {
-          name: "Rapid Attack",
-          desc: "Attack faster",
-          apply() {
-            player.attackCooldown = Math.max(6, player.attackCooldown - 3);
-            bonusText.textContent = "Attack faster";
-          }
-        },
-        {
-          name: "Max Health",
-          desc: "+30 max HP and heal 20",
-          apply() {
-            player.maxHp += 30;
-            player.hp = Math.min(player.maxHp, player.hp + 20);
-            bonusText.textContent = "Max HP +30";
-          }
-        },
-        {
-          name: "Move Speed",
-          desc: "+0.5 move speed",
-          apply() {
-            player.speed += 0.5;
-            bonusText.textContent = "Move speed +0.5";
-          }
-        },
-        {
-          name: "Longer Range",
-          desc: "+40 attack range",
-          apply() {
-            player.range += 40;
-            bonusText.textContent = "Range +40";
-          }
-        },
-        {
-          name: "Armor",
-          desc: "Take 8% less damage",
-          apply() {
-            player.armor = Math.min(0.5, player.armor + 0.08);
-            bonusText.textContent = "Armor up";
-          }
-        },
-        {
-          name: "Regen",
-          desc: "Recover 1 HP each second",
-          apply() {
-            player.regen += 1;
-            bonusText.textContent = "Regen +1";
-          }
-        },
-        {
-          name: "Critical Hits",
-          desc: "+10% crit chance",
-          apply() {
-            player.critChance += 0.10;
-            bonusText.textContent = "Crit chance up";
-          }
-        },
-        {
-          name: "Wider Sword",
-          desc: "Sword hits farther",
-          only: "sword",
-          apply() {
-            player.swordArcBonus += 26;
-            bonusText.textContent = "Wider sword";
-          }
-        },
-        {
-          name: "More Shots",
-          desc: "+1 projectile each attack",
-          only: "shooter",
-          apply() {
-            player.projectileCount += 1;
-            bonusText.textContent = "Extra projectile";
-          }
-        },
-        {
-          name: "Faster Bullets",
-          desc: "+2 bullet speed",
-          only: "shooter",
-          apply() {
-            player.projectileSpeed += 2;
-            bonusText.textContent = "Bullet speed up";
-          }
-        }
-      ];
-    }
-
-    function offerUpgrades(count, bossReward) {
-      pausedForUpgrade = true;
+    function openStore() {
       running = false;
-      upgradeScreen.classList.remove("hidden");
-      upgradeList.innerHTML = "";
+      pausedForStore = true;
+      storeScreen.classList.remove("hidden");
+      renderStore();
+    }
 
-      let pool = upgradePool().filter(u => !u.only || u.only === player.classType);
-
-      if (bossReward) {
-        pool = pool.concat([
-          {
-            name: "Boss Reward: Huge Power",
-            desc: "+12 damage",
-            apply() {
-              player.power += 12;
-              bonusText.textContent = "Boss power";
-            }
-          },
-          {
-            name: "Boss Reward: Huge Health",
-            desc: "+60 max HP and heal 40",
-            apply() {
-              player.maxHp += 60;
-              player.hp = Math.min(player.maxHp, player.hp + 40);
-              bonusText.textContent = "Boss health";
-            }
-          }
-        ]);
+    const storeItems = [
+      {
+        name: "Damage Upgrade",
+        desc: "+6 damage",
+        cost: 35,
+        apply() { player.power += 6; }
+      },
+      {
+        name: "Attack Speed",
+        desc: "Attack faster",
+        cost: 40,
+        apply() { player.attackCooldown = Math.max(6, player.attackCooldown - 2); }
+      },
+      {
+        name: "Move Speed",
+        desc: "+0.4 speed",
+        cost: 30,
+        apply() { player.speed += 0.4; }
+      },
+      {
+        name: "Max Health",
+        desc: "+25 max HP and heal 20",
+        cost: 45,
+        apply() {
+          player.maxHp += 25;
+          player.hp = Math.min(player.maxHp, player.hp + 20);
+        }
+      },
+      {
+        name: "Armor",
+        desc: "Take 7% less damage",
+        cost: 50,
+        apply() {
+          player.armor = Math.min(0.5, player.armor + 0.07);
+        }
+      },
+      {
+        name: "Range Upgrade",
+        desc: "+35 attack range",
+        cost: 35,
+        apply() { player.range += 35; }
+      },
+      {
+        name: "Extra Shot",
+        desc: "+1 projectile per attack",
+        cost: 65,
+        only: "shooter",
+        apply() { player.projectileCount += 1; }
+      },
+      {
+        name: "Bullet Speed",
+        desc: "+2 projectile speed",
+        cost: 30,
+        only: "shooter",
+        apply() { player.projectileSpeed += 2; }
+      },
+      {
+        name: "Longer Sword Reach",
+        desc: "+24 sword range",
+        cost: 40,
+        only: "sword",
+        apply() { player.swordRangeBonus += 24; }
+      },
+      {
+        name: "Heal",
+        desc: "Restore 35 HP",
+        cost: 28,
+        apply() { player.hp = Math.min(player.maxHp, player.hp + 35); }
       }
+    ];
 
-      const chosen = [];
-      while (chosen.length < count && pool.length) {
-        const i = Math.floor(Math.random() * pool.length);
-        chosen.push(pool.splice(i, 1)[0]);
-      }
+    function renderStore() {
+      storeMoneyText.textContent = player.money;
+      storeGrid.innerHTML = "";
 
-      chosen.forEach(upgrade => {
+      const available = storeItems.filter(item => !item.only || item.only === player.classType);
+
+      available.forEach(item => {
         const card = document.createElement("div");
-        card.className = "upgrade-card";
+        card.className = "store-card";
 
         const title = document.createElement("h3");
-        title.textContent = upgrade.name;
+        title.textContent = `${item.name} - $${item.cost}`;
 
         const desc = document.createElement("p");
-        desc.textContent = upgrade.desc;
+        desc.textContent = item.desc;
 
         const btn = document.createElement("button");
-        btn.textContent = "Choose";
+        btn.textContent = player.money >= item.cost ? "Buy" : "Not Enough Money";
+        btn.disabled = player.money < item.cost;
+        btn.style.opacity = player.money >= item.cost ? "1" : "0.6";
+
         btn.addEventListener("click", () => {
-          upgrade.apply();
-          upgradeScreen.classList.add("hidden");
-          pausedForUpgrade = false;
-          running = true;
-          startNextWave();
-          loop();
+          if (player.money < item.cost) return;
+          player.money -= item.cost;
+          item.apply();
+          renderStore();
         });
 
         card.appendChild(title);
         card.appendChild(desc);
         card.appendChild(btn);
-        upgradeList.appendChild(card);
+        storeGrid.appendChild(card);
       });
     }
 
+    nextLevelBtn.addEventListener("click", () => {
+      storeScreen.classList.add("hidden");
+      pausedForStore = false;
+
+      if (currentLevelIndex >= levels.length - 1) {
+        winText.textContent = `You finished all 5 levels with $${player.money} left.`;
+        winScreen.classList.remove("hidden");
+        return;
+      }
+
+      loadLevel(currentLevelIndex + 1);
+      loop();
+    });
+
+    function updateCamera() {
+      camera.x = player.x - canvas.width / 2;
+      camera.y = player.y - canvas.height / 2;
+
+      camera.x = clamp(camera.x, 0, Math.max(0, currentLevel.mapW - canvas.width));
+      camera.y = clamp(camera.y, 0, Math.max(0, currentLevel.mapH - canvas.height));
+    }
+
     function updateHud() {
-      waveText.textContent = wave;
-      enemiesText.textContent = enemies.filter(e => e.hp > 0).length;
-      killsText.textContent = kills;
+      levelText.textContent = String(currentLevelIndex + 1);
+      areaText.textContent = currentLevel.name;
+      enemiesText.textContent = enemies.length;
       hpText.textContent = `${Math.max(0, Math.ceil(player.hp))} / ${player.maxHp}`;
       hpBar.style.width = `${clamp((player.hp / player.maxHp) * 100, 0, 100)}%`;
-      xpText.textContent = `${player.xp} / ${player.xpToNext}`;
-      xpBar.style.width = `${clamp((player.xp / player.xpToNext) * 100, 0, 100)}%`;
+      moneyText.textContent = player.money;
       powerText.textContent = player.power;
       attackText.textContent = (60 / Math.max(6, Math.round(player.attackCooldown))).toFixed(1) + "/sec";
       speedText.textContent = player.speed.toFixed(1);
+      armorText.textContent = `${Math.round(player.armor * 100)}%`;
+      portalText.textContent = currentLevel.portal.open ? "Open" : "Locked";
     }
 
     function endGame() {
       running = false;
-      pausedForUpgrade = false;
-      gameOverText.textContent = `You made it to wave ${wave} with ${kills} kills.`;
+      pausedForStore = false;
+      gameOverText.textContent = `You reached level ${currentLevelIndex + 1} and had $${player.money}.`;
       gameOverScreen.classList.remove("hidden");
     }
 
-    function drawSpaceBackground() {
-      for (const n of nebulae) {
-        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-        grad.addColorStop(0, `rgba(${n.color},${n.alpha})`);
-        grad.addColorStop(1, `rgba(${n.color},0)`);
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fill();
+    function drawWorldBackground() {
+      ctx.fillStyle = currentLevel.bg;
+      ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
+
+      // path / ground bands
+      ctx.fillStyle = currentLevel.ground2;
+      for (let i = 0; i < currentLevel.mapW; i += 180) {
+        ctx.fillRect(i, 450 + Math.sin(i * 0.003) * 20, 120, 800);
       }
 
-      for (const s of starsFar) {
-        const tw = 0.75 + Math.sin(frameCount * s.twinkle) * 0.25;
-        ctx.globalAlpha = s.a * tw;
-        ctx.fillStyle = "#dfe8ff";
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      drawPlanetBackRings();
-      drawPlanetBody();
-      drawPlanetFrontRings();
-
-      for (const s of starsNear) {
-        const tw = 0.7 + Math.sin(frameCount * s.twinkle + s.x) * 0.3;
-        ctx.globalAlpha = s.a * tw;
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-
-        if (s.r > 1.8) {
-          ctx.strokeStyle = "rgba(255,255,255,0.18)";
-          ctx.lineWidth = 1;
+      // accent circles / alien patches
+      for (let i = 0; i < currentLevel.decor.length; i++) {
+        const d = currentLevel.decor[i];
+        if (d.kind === "stone") {
+          ctx.fillStyle = "rgba(255,255,255,0.06)";
           ctx.beginPath();
-          ctx.moveTo(s.x - 4, s.y);
-          ctx.lineTo(s.x + 4, s.y);
-          ctx.moveTo(s.x, s.y - 4);
-          ctx.lineTo(s.x, s.y + 4);
-          ctx.stroke();
+          ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = currentLevel.accent;
+          ctx.globalAlpha = 0.22;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.r * 1.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
         }
       }
-
-      ctx.globalAlpha = 1;
     }
 
-    function drawPlanetBody() {
-      const x = planet.x;
-      const y = planet.y;
-      const r = planet.r;
+    function drawObstacles() {
+      for (const o of currentLevel.obstacles) {
+        if (o.type === "slime") {
+          ctx.fillStyle = currentLevel.slimeColor;
+          ctx.globalAlpha = 0.7;
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = "rgba(255,255,255,0.18)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(o.x, o.y, o.w, o.h);
+        } else if (o.type === "pillar") {
+          ctx.fillStyle = currentLevel.obstacleColor;
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.strokeStyle = "rgba(255,255,255,0.18)";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(o.x, o.y, o.w, o.h);
+          ctx.fillStyle = "rgba(255,255,255,0.08)";
+          ctx.fillRect(o.x + 12, o.y + 12, o.w - 24, o.h - 24);
+        } else {
+          ctx.fillStyle = currentLevel.obstacleColor;
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.fillStyle = "rgba(255,255,255,0.06)";
+          ctx.fillRect(o.x + 10, o.y + 10, o.w - 20, o.h - 20);
+        }
+      }
+    }
 
-      const grad = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.2, x, y, r);
-      grad.addColorStop(0, "#ffd7a8");
-      grad.addColorStop(0.35, "#d89a67");
-      grad.addColorStop(0.7, "#8f5871");
-      grad.addColorStop(1, "#3e3155");
+    function drawStoreZone() {
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.fillRect(currentLevel.storeZone.x, currentLevel.storeZone.y, currentLevel.storeZone.w, currentLevel.storeZone.h);
 
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "#d9b36a";
+      ctx.fillRect(currentLevel.storeZone.x + 10, currentLevel.storeZone.y + 20, currentLevel.storeZone.w - 20, currentLevel.storeZone.h - 40);
+
+      ctx.fillStyle = "#4a2d12";
+      ctx.fillRect(currentLevel.storeZone.x + 20, currentLevel.storeZone.y + 70, currentLevel.storeZone.w - 40, 100);
+
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 20px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("SHOP", currentLevel.storeZone.x + currentLevel.storeZone.w / 2, currentLevel.storeZone.y + 55);
+    }
+
+    function drawPortal() {
+      const p = currentLevel.portal;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+
       ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(0, 0, p.radius + 8, 0, Math.PI * 2);
+      ctx.strokeStyle = p.open ? "#5df0ff" : "#555";
+      ctx.lineWidth = 6;
+      ctx.stroke();
 
-      ctx.globalAlpha = 0.12;
-      for (let i = 0; i < 5; i++) {
-        ctx.fillStyle = "#fff";
+      if (p.open) {
+        ctx.globalAlpha = 0.75 + Math.sin(frameCount * 0.08) * 0.18;
         ctx.beginPath();
-        ctx.ellipse(
-          x + rand(-r * 0.25, r * 0.25),
-          y + rand(-r * 0.2, r * 0.2),
-          rand(r * 0.2, r * 0.45),
-          rand(r * 0.06, r * 0.14),
-          rand(-0.5, 0.5),
-          0,
-          Math.PI * 2
-        );
+        ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#61dcff";
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#333";
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
-
-      const shade = ctx.createRadialGradient(x + r * 0.3, y + r * 0.25, r * 0.1, x, y, r * 1.15);
-      shade.addColorStop(0, "rgba(0,0,0,0)");
-      shade.addColorStop(1, "rgba(0,0,0,0.42)");
-      ctx.fillStyle = shade;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    function drawPlanetBackRings() {
-      const x = planet.x;
-      const y = planet.y;
-      const r = planet.r;
-
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-0.32);
-      ctx.globalAlpha = 0.24;
-      ctx.strokeStyle = "#b5c2ff";
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r * 1.65, r * 0.48, 0, Math.PI * 0.18, Math.PI * 0.82);
-      ctx.stroke();
-
-      ctx.strokeStyle = "#d8c1ff";
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r * 1.38, r * 0.38, 0, Math.PI * 0.17, Math.PI * 0.83);
-      ctx.stroke();
       ctx.restore();
-    }
-
-    function drawPlanetFrontRings() {
-      const x = planet.x;
-      const y = planet.y;
-      const r = planet.r;
-
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-0.32);
-      ctx.globalAlpha = 0.55;
-      ctx.strokeStyle = "#e7e2ff";
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r * 1.65, r * 0.48, 0, Math.PI * 1.18, Math.PI * 1.82);
-      ctx.stroke();
-
-      ctx.strokeStyle = "#b6dcff";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r * 1.38, r * 0.38, 0, Math.PI * 1.18, Math.PI * 1.82);
-      ctx.stroke();
-      ctx.restore();
-      ctx.globalAlpha = 1;
-    }
-
-    function drawGrid() {
-      ctx.strokeStyle = "rgba(140,170,255,0.05)";
-      ctx.lineWidth = 1;
-      const size = 42;
-      for (let x = 0; x < canvas.width; x += size) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += size) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
     }
 
     function drawPlayer() {
+      const glow = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius * 2.6);
+      glow.addColorStop(0, player.classType === "sword" ? "rgba(74,178,255,0.22)" : "rgba(255,210,79,0.22)");
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius * 2.6, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
       ctx.fillStyle = player.color;
       ctx.fill();
 
-      const glow = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius * 2.4);
-      glow.addColorStop(0, player.classType === "sword" ? "rgba(74,178,255,0.20)" : "rgba(255,210,79,0.20)");
-      glow.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, player.radius * 2.4, 0, Math.PI * 2);
-      ctx.fill();
-
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.range, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(180,210,255,0.08)";
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
       ctx.lineWidth = 1;
       ctx.stroke();
     }
 
     function drawEnemies() {
       for (const enemy of enemies) {
-        if (enemy.spawnDelay > 0) continue;
+        const aggroColor = enemy.aggro ? "#ff6b57" : "#d98a7c";
+        const color = enemy.hitFlash > 0 ? "#fff" : aggroColor;
 
-        ctx.save();
-        if (enemy.hitFlash > 0) {
-          ctx.fillStyle = "#ffffff";
-        } else {
-          ctx.fillStyle = enemy.color;
-        }
-
-        const size = enemy.size;
-
-        const glow = ctx.createRadialGradient(enemy.x, enemy.y, 0, enemy.x, enemy.y, size * 1.4);
-        glow.addColorStop(0, "rgba(255,120,120,0.18)");
-        glow.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, size * 0.9, 0, Math.PI * 2);
+        ctx.arc(enemy.x, enemy.y, enemy.radius + 10, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,100,100,0.08)";
         ctx.fill();
 
-        ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : enemy.color;
-        ctx.fillRect(enemy.x - size / 2, enemy.y - size / 2, size, size);
+        ctx.fillStyle = color;
+        ctx.fillRect(enemy.x - enemy.size / 2, enemy.y - enemy.size / 2, enemy.size, enemy.size);
 
-        if (enemy.isBoss) {
-          ctx.strokeStyle = "#ffd700";
-          ctx.lineWidth = 3;
-          ctx.strokeRect(enemy.x - size / 2, enemy.y - size / 2, size, size);
-        }
-        ctx.restore();
-
-        const barW = Math.max(24, size);
         const pct = clamp(enemy.hp / enemy.maxHp, 0, 1);
-        ctx.fillStyle = "#1b1b1b";
-        ctx.fillRect(enemy.x - barW / 2, enemy.y - size / 2 - 10, barW, 5);
-        ctx.fillStyle = enemy.isBoss ? "#ffd700" : "#2ecc71";
-        ctx.fillRect(enemy.x - barW / 2, enemy.y - size / 2 - 10, barW * pct, 5);
+        ctx.fillStyle = "#222";
+        ctx.fillRect(enemy.x - 16, enemy.y - 24, 32, 4);
+        ctx.fillStyle = "#2ecc71";
+        ctx.fillRect(enemy.x - 16, enemy.y - 24, 32 * pct, 4);
       }
     }
 
     function drawProjectiles() {
       for (const p of projectiles) {
-        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
-        glow.addColorStop(0, "rgba(255,255,255,0.7)");
-        glow.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size * 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.18)";
         ctx.fill();
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = "#fff";
         ctx.fill();
       }
     }
 
-    function drawPickups() {
-      for (const item of pickups) {
-        const pulse = 1 + Math.sin(frameCount * 0.1 + item.x) * 0.12;
-
+    function drawCoins() {
+      for (const c of coins) {
         ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius * 2.2 * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(46,204,113,0.12)";
+        ctx.arc(c.x, c.y, c.radius + Math.sin(frameCount * 0.09 + c.x) * 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#f1c40f";
         ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = "#2ecc71";
-        ctx.fill();
-        ctx.strokeStyle = "#b6ffcc";
+        ctx.strokeStyle = "#fff1a8";
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -1205,17 +1173,17 @@
           ctx.globalAlpha = e.life / 8 * 0.35;
           ctx.beginPath();
           ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-          ctx.strokeStyle = "#7cc5ff";
+          ctx.strokeStyle = "#8bc9ff";
           ctx.lineWidth = 6;
           ctx.stroke();
           ctx.restore();
-        } else if (e.type === "heal") {
+        } else if (e.type === "coin") {
           ctx.save();
-          ctx.globalAlpha = e.life / 20 * 0.5;
+          ctx.globalAlpha = e.life / 16 * 0.5;
           ctx.beginPath();
-          ctx.arc(e.x, e.y, e.radius + (20 - e.life), 0, Math.PI * 2);
-          ctx.strokeStyle = "#7dff9b";
-          ctx.lineWidth = 4;
+          ctx.arc(e.x, e.y, 10 + (16 - e.life), 0, Math.PI * 2);
+          ctx.strokeStyle = "#f1c40f";
+          ctx.lineWidth = 3;
           ctx.stroke();
           ctx.restore();
         }
@@ -1227,52 +1195,57 @@
       ctx.font = "bold 14px Arial";
       for (const t of damageTexts) {
         ctx.save();
-        ctx.globalAlpha = t.life / 30;
-        if (t.hurt) ctx.fillStyle = "#ff7b7b";
-        else if (t.crit) ctx.fillStyle = "#ffd700";
-        else ctx.fillStyle = "#ffffff";
+        ctx.globalAlpha = t.life / 28;
+        ctx.fillStyle = t.hurt ? "#ff8a8a" : "#fff";
         ctx.fillText(t.text, t.x, t.y);
         ctx.restore();
       }
     }
 
-    function drawBanner() {
-      if (bannerTimer > 0) {
-        ctx.save();
-        ctx.globalAlpha = Math.min(1, bannerTimer / 20);
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "center";
-        ctx.font = "bold 34px Arial";
-        ctx.fillText(bannerText, canvas.width / 2, 70);
-        ctx.restore();
+    function drawMiniHints() {
+      ctx.textAlign = "center";
+      ctx.font = "bold 18px Arial";
+      ctx.fillStyle = "rgba(255,255,255,0.82)";
+      ctx.fillText(currentLevel.name, player.x, player.y - 80);
+
+      if (!currentLevel.portal.open) {
+        ctx.font = "bold 16px Arial";
+        ctx.fillText("Clear all enemy camps to open portal", player.x, player.y - 58);
       }
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawSpaceBackground();
-      drawGrid();
-      drawPlayer();
-      drawPickups();
+
+      ctx.save();
+      ctx.translate(-camera.x, -camera.y);
+
+      drawWorldBackground();
+      drawObstacles();
+      drawStoreZone();
+      drawPortal();
+      drawCoins();
       drawEnemies();
       drawProjectiles();
+      drawPlayer();
       drawEffects();
       drawDamageTexts();
-      drawBanner();
-      ctx.globalAlpha = 1;
+      drawMiniHints();
+
+      ctx.restore();
     }
 
     function update() {
       frameCount++;
-      if (bannerTimer > 0) bannerTimer--;
 
       updatePlayer();
       updateEnemies();
       updateProjectiles();
-      updatePickups();
+      updateCoins();
       updateEffects();
       updateDamageTexts();
-      maybeOpenUpgradeScreen();
+      updatePortalAndStore();
+      updateCamera();
       updateHud();
 
       if (player.hp <= 0) {
@@ -1281,13 +1254,11 @@
     }
 
     function loop() {
-      if (!running || pausedForUpgrade) return;
+      if (!running || pausedForStore) return;
       update();
       draw();
       if (running) requestAnimationFrame(loop);
     }
-
-    resizeCanvas();
   </script>
 </body>
 </html>
