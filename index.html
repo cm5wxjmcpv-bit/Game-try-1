@@ -511,6 +511,39 @@
     });
 
     function buildObstacles(spec) {
+      if (spec.name === "Crimson Flats") {
+        return [
+          { x: 0, y: 0, w: 640, h: 430, type: "rock" },
+          { x: 0, y: spec.mapH - 430, w: 640, h: 430, type: "rock" },
+          { x: 560, y: 0, w: 270, h: 320, type: "rock" },
+          { x: 560, y: spec.mapH - 320, w: 270, h: 320, type: "rock" },
+
+          { x: 900, y: 0, w: 260, h: 730, type: "caveWall" },
+          { x: 900, y: 1140, w: 260, h: 680, type: "caveWall" },
+
+          { x: 1320, y: 260, w: 240, h: 250, type: "rock" },
+          { x: 1460, y: 1080, w: 280, h: 270, type: "rock" },
+          { x: 1700, y: 420, w: 180, h: 220, type: "pillar" },
+          { x: 1850, y: 1060, w: 220, h: 250, type: "rock" },
+
+          { x: 2190, y: 0, w: 210, h: 640, type: "caveWall" },
+          { x: 2190, y: 1170, w: 210, h: 650, type: "caveWall" },
+          { x: 2300, y: 700, w: 230, h: 420, type: "slime" },
+
+          { x: 2640, y: 260, w: 220, h: 240, type: "rock" },
+          { x: 2800, y: 1080, w: 240, h: 260, type: "rock" },
+          { x: 3000, y: 460, w: 170, h: 200, type: "pillar" },
+
+          { x: 3300, y: 0, w: 280, h: 700, type: "caveWall" },
+          { x: 3300, y: 1140, w: 280, h: 680, type: "caveWall" },
+          { x: 3560, y: 250, w: 210, h: 220, type: "rock" },
+          { x: 3560, y: 1160, w: 210, h: 220, type: "rock" },
+
+          { x: 3920, y: 0, w: 330, h: 660, type: "caveWall" },
+          { x: 3920, y: 1080, w: 330, h: 740, type: "caveWall" }
+        ];
+      }
+
       const obs = [];
 
       obs.push({ x: 260, y: 0, w: 280, h: 520, type: "rock" });
@@ -554,6 +587,12 @@
     }
 
     function buildBridges(spec) {
+      if (spec.name === "Crimson Flats") {
+        return [
+          { x: 2260, y: 760, w: 320, h: 64, type: "bridge" }
+        ];
+      }
+
       const bridges = [];
       const slimeRects = [
         { x: 980, y: 720, w: 130, h: 220 },
@@ -578,6 +617,45 @@
     }
 
     function buildEnemyCamps(spec) {
+      if (spec.name === "Crimson Flats") {
+        const camps = [];
+        const campDefs = [
+          { x: 760, y: 910, count: 4, radius: 170 },
+          { x: 1680, y: 930, count: 5, radius: 190 },
+          { x: 2890, y: 900, count: 5, radius: 185 },
+          { x: 3740, y: 905, count: 6, radius: 220 }
+        ];
+
+        for (const camp of campDefs) {
+          for (let i = 0; i < camp.count; i++) {
+            const ox = rand(-65, 65);
+            const oy = rand(-115, 115);
+            camps.push({
+              x: camp.x + ox,
+              y: camp.y + oy,
+              homeX: camp.x + ox,
+              homeY: camp.y + oy,
+              campX: camp.x,
+              campY: camp.y,
+              campRadius: camp.radius,
+              radius: 16,
+              size: 26,
+              hp: spec.enemyHp,
+              maxHp: spec.enemyHp,
+              speed: spec.enemySpeed,
+              damage: spec.enemyDamage,
+              aggro: false,
+              aggroRange: 230,
+              leashRange: 360,
+              money: Math.floor(rand(spec.moneyDrop[0], spec.moneyDrop[1] + 1)),
+              hitFlash: 0
+            });
+          }
+        }
+
+        return camps;
+      }
+
       const camps = [];
       const laneY = spec.mapH / 2;
       const campPositions = [];
@@ -649,6 +727,28 @@
 
     function buildDecor(spec) {
       const arr = [];
+
+      if (spec.name === "Crimson Flats") {
+        for (let i = 0; i < 210; i++) {
+          arr.push({
+            kind: i % 5 === 0 ? "plant" : "stone",
+            x: rand(40, spec.mapW - 40),
+            y: rand(40, spec.mapH - 40),
+            r: rand(7, 22)
+          });
+        }
+
+        const ruins = [
+          [690, 770], [760, 1030], [1550, 730], [1770, 1110],
+          [2710, 760], [3020, 1030], [3600, 760], [3820, 1030]
+        ];
+        for (const [x, y] of ruins) {
+          arr.push({ kind: "ruin", x, y, r: rand(12, 20) });
+        }
+
+        return arr;
+      }
+
       for (let i = 0; i < 160; i++) {
         arr.push({
           kind: i % 4 === 0 ? "plant" : "stone",
@@ -659,7 +759,6 @@
       }
       return arr;
     }
-
 
     function createTerrainTexture(spec) {
       const tile = document.createElement("canvas");
@@ -1243,6 +1342,30 @@
         ctx.fill();
       }
 
+      if (currentLevel.name === "Crimson Flats") {
+        const wornPath = [
+          [200, 910, 560, 210], [760, 910, 520, 220], [1280, 1030, 560, 210],
+          [1840, 930, 420, 170], [2260, 900, 360, 160], [2620, 900, 520, 210],
+          [3140, 900, 470, 190], [3600, 920, 480, 220]
+        ];
+        for (const p of wornPath) {
+          const g = ctx.createRadialGradient(p[0], p[1], 40, p[0], p[1], p[2] * 0.45);
+          g.addColorStop(0, "rgba(90,55,38,0.16)");
+          g.addColorStop(1, "rgba(90,55,38,0)");
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.ellipse(p[0], p[1], p[2], p[3], 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        const chasm = ctx.createLinearGradient(2260, 640, 2260, 1180);
+        chasm.addColorStop(0, "rgba(20,12,10,0.58)");
+        chasm.addColorStop(0.5, "rgba(8,6,7,0.78)");
+        chasm.addColorStop(1, "rgba(20,12,10,0.58)");
+        ctx.fillStyle = chasm;
+        ctx.fillRect(2230, 620, 380, 560);
+      }
+
       for (const d of currentLevel.decor) {
         if (d.kind === "stone") {
           const pebble = ctx.createRadialGradient(d.x - d.r * 0.35, d.y - d.r * 0.35, 2, d.x, d.y, d.r);
@@ -1252,6 +1375,14 @@
           ctx.beginPath();
           ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
           ctx.fill();
+        } else if (d.kind === "ruin") {
+          ctx.fillStyle = "rgba(70,55,45,0.55)";
+          ctx.fillRect(d.x - d.r, d.y - d.r * 0.65, d.r * 2, d.r * 1.3);
+          ctx.strokeStyle = "rgba(25,18,16,0.4)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(d.x - d.r, d.y - d.r * 0.65, d.r * 2, d.r * 1.3);
+          ctx.fillStyle = "rgba(210,180,140,0.12)";
+          ctx.fillRect(d.x - d.r + 4, d.y - d.r * 0.45, d.r * 1.4, 5);
         } else {
           ctx.fillStyle = currentLevel.accent;
           ctx.globalAlpha = 0.14;
@@ -1263,6 +1394,11 @@
       }
 
       for (const b of currentLevel.bridges) {
+        if (currentLevel.name === "Crimson Flats") {
+          ctx.fillStyle = "rgba(0,0,0,0.34)";
+          ctx.fillRect(b.x + 10, b.y + b.h - 4, b.w - 20, 16);
+        }
+
         const wood = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
         wood.addColorStop(0, shadeColor(currentLevel.bridgeColor, 24));
         wood.addColorStop(0.5, currentLevel.bridgeColor);
@@ -1272,6 +1408,16 @@
         for (let i = 0; i < b.w; i += 16) {
           ctx.fillStyle = "rgba(70,40,20,0.32)";
           ctx.fillRect(b.x + i, b.y + 2, 7, b.h - 4);
+        }
+        if (currentLevel.name === "Crimson Flats") {
+          for (let i = 0; i <= b.w; i += 28) {
+            ctx.fillStyle = "rgba(55,34,20,0.9)";
+            ctx.fillRect(b.x + i - 2, b.y - 12, 4, 12);
+            ctx.fillRect(b.x + i - 2, b.y + b.h, 4, 12);
+          }
+          ctx.fillStyle = "rgba(110,78,52,0.9)";
+          ctx.fillRect(b.x, b.y - 6, b.w, 5);
+          ctx.fillRect(b.x, b.y + b.h + 1, b.w, 5);
         }
         ctx.strokeStyle = "rgba(0,0,0,0.28)";
         ctx.lineWidth = 2;
