@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wave Fighter</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #111;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    #menu, #gameOverScreen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.85);
+      z-index: 20;
+    }
+
+    .panel {
+      background: #1c1c1c;
+      border: 2px solid #444;
+      border-radius: 18px;
+      padding: 28px;
+      width: min(92vw, 420px);
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    h1, h2, p {
+      margin-top: 0;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #2d7ef7;
+      color: white;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    button.secondary {
+      background: #444;
+    }
+
+    #hud {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+
+    .hud-box {
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 10px 14px;
+      min-width: 180px;
+    }
+
+    .bar-wrap {
+      width: 180px;
+      height: 14px;
+      background: #333;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 100%;
+      background: #2ecc71;
+      transition: width 0.15s linear;
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background:
+        radial-gradient(circle at center, #1a1a1a 0%, #0f0f0f 70%);
+    }
+
+    .small {
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    #gameOverScreen {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <div class="panel">
+      <h1>Wave Fighter</h1>
+      <p>Pick your class and survive the waves.</p>
+      <p class="small">
+        Move with <b>W A S D</b> or <b>Arrow Keys</b>.<br>
+        Attacks happen automatically.
+      </p>
+      <div class="btn-row">
+        <button id="swordBtn">Sword Class</button>
+        <button id="shooterBtn">Shooter Class</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameOverScreen">
+    <div class="panel">
+      <h2>Game Over</h2>
+      <p id="gameOverText">You made it to wave 1.</p>
+      <div class="btn-row">
+        <button id="restartBtn">Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div class="hud-box">
+      <div><b>Class:</b> <span id="classText">-</span></div>
+      <div><b>Wave:</b> <span id="waveText">0</span></div>
+      <div><b>Enemies Left:</b> <span id="enemiesText">0</span></div>
+    </div>
+
+    <div class="hud-box">
+      <div><b>HP:</b> <span id="hpText">0 / 0</span></div>
+      <div class="bar-wrap">
+        <div class="bar" id="hpBar"></div>
+      </div>
+      <div style="margin-top:8px;"><b>Power:</b> <span id="powerText">0</span></div>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const menu = document.getElementById("menu");
+    const swordBtn = document.getElementById("swordBtn");
+    const shooterBtn = document.getElementById("shooterBtn");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const gameOverText = document.getElementById("gameOverText");
+    const restartBtn = document.getElementById("restartBtn");
+
+    const classText = document.getElementById("classText");
+    const waveText = document.getElementById("waveText");
+    const enemiesText = document.getElementById("enemiesText");
+    const hpText = document.getElementById("hpText");
+    const hpBar = document.getElementById("hpBar");
+    const powerText = document.getElementById("powerText");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    const keys = {};
+    window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
+    window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+
+    let running = false;
+    let wave = 0;
+    let enemies = [];
+    let projectiles = [];
+    let damageTexts = [];
+    let attackTimer = 0;
+    let spawnDelayTimer = 0;
+
+    let player = null;
+
+    function makePlayer(type) {
+      const isSword = type === "sword";
+
+      return {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        radius: 18,
+        color: isSword ? "#3aa0ff" : "#f5c542",
+        classType: type,
+        speed: 3.4,
+        maxHp: isSword ? 120 : 90,
+        hp: isSword ? 120 : 90,
+        power: isSword ? 20 : 14,
+        range: isSword ? 70 : 260,
+        attackCooldown: isSword ? 28 : 18,
+        projectileSpeed: 7,
+        projectileSize: 7,
+        contactDamageCooldown: 0
+      };
+    }
+
+    function startGame(type) {
+      player = makePlayer(type);
+      running = true;
+      wave = 0;
+      enemies = [];
+      projectiles = [];
+      damageTexts = [];
+      attackTimer = 0;
+      spawnDelayTimer = 50;
+      menu.style.display = "none";
+      gameOverScreen.style.display = "none";
+      classText.textContent = type === "sword" ? "Sword" : "Shooter";
+      nextWave();
+      loop();
+    }
+
+    function restartGame() {
+      menu.style.display = "flex";
+      gameOverScreen.style.display = "none";
+      running = false;
+    }
+
+    swordBtn.addEventListener("click", () => startGame("sword"));
+    shooterBtn.addEventListener("click", () => startGame("shooter"));
+    restartBtn.addEventListener("click", restartGame);
+
+    function nextWave() {
+      wave++;
+      const count = wave; // round 1 = 1 enemy, round 2 = 2, etc.
+      for (let i = 0; i < count; i++) {
+        spawnEnemy(i * 20);
+      }
+
+      // player gets stronger each completed round
+      if (wave > 1) {
+        player.maxHp += 12;
+        player.hp = Math.min(player.maxHp, player.hp + 18);
+        player.power += 4;
+        player.speed += 0.08;
+
+        if (player.classType === "sword") {
+          player.range += 4;
+          player.attackCooldown = Math.max(12, player.attackCooldown - 1);
+        } else {
+          player.range += 8;
+          player.projectileSpeed += 0.15;
+          player.attackCooldown = Math.max(8, player.attackCooldown - 0.5);
+        }
+      }
+    }
+
+    function spawnEnemy(delay = 0) {
+      const side = Math.floor(Math.random() * 4);
+      let x, y;
+      const margin = 40;
+
+      if (side === 0) {
+        x = Math.random() * canvas.width;
+        y = -margin;
+      } else if (side === 1) {
+        x = canvas.width + margin;
+        y = Math.random() * canvas.height;
+      } else if (side === 2) {
+        x = Math.random() * canvas.width;
+        y = canvas.height + margin;
+      } else {
+        x = -margin;
+        y = Math.random() * canvas.height;
+      }
+
+      const baseHp = 26 + wave * 8;
+      const baseSpeed = 1 + wave * 0.06;
+
+      enemies.push({
+        x,
+        y,
+        size: 24,
+        hp: baseHp,
+        maxHp: baseHp,
+        speed: baseSpeed,
+        damage: 8 + Math.floor(wave * 0.5),
+        spawnDelay: delay
+      });
+    }
+
+    function updatePlayer() {
+      let dx = 0;
+      let dy = 0;
+
+      if (keys["w"] || keys["arrowup"]) dy -= 1;
+      if (keys["s"] || keys["arrowdown"]) dy += 1;
+      if (keys["a"] || keys["arrowleft"]) dx -= 1;
+      if (keys["d"] || keys["arrowright"]) dx += 1;
+
+      const len = Math.hypot(dx, dy);
+      if (len > 0) {
+        dx /= len;
+        dy /= len;
+      }
+
+      player.x += dx * player.speed;
+      player.y += dy * player.speed;
+
+      player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+      player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+
+      if (player.contactDamageCooldown > 0) player.contactDamageCooldown--;
+
+      attackTimer--;
+      if (attackTimer <= 0) {
+        autoAttack();
+        attackTimer = player.attackCooldown;
+      }
+    }
+
+    function autoAttack() {
+      if (enemies.length === 0) return;
+
+      let nearest = null;
+      let bestDist = Infinity;
+
+      for (const enemy of enemies) {
+        if (enemy.spawnDelay > 0) continue;
+        const d = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+        if (d < bestDist) {
+          bestDist = d;
+          nearest = enemy;
+        }
+      }
+
+      if (!nearest) return;
+      if (bestDist > player.range) return;
+
+      if (player.classType === "sword") {
+        for (const enemy of enemies) {
+          if (enemy.spawnDelay > 0) continue;
+          const d = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+          if (d <= player.range) {
+            enemy.hp -= player.power;
+            damageTexts.push({
+              x: enemy.x,
+              y: enemy.y - 10,
+              text: "-" + player.power,
+              life: 30
+            });
+          }
+        }
+      } else {
+        const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+        projectiles.push({
+          x: player.x,
+          y: player.y,
+          vx: Math.cos(angle) * player.projectileSpeed,
+          vy: Math.sin(angle) * player.projectileSpeed,
+          size: player.projectileSize,
+          damage: player.power,
+          life: 70
+        });
+      }
+    }
+
+    function updateEnemies() {
+      for (const enemy of enemies) {
+        if (enemy.spawnDelay > 0) {
+          enemy.spawnDelay--;
+          continue;
+        }
+
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const dist = Math.hypot(dx, dy) || 1;
+
+        enemy.x += (dx / dist) * enemy.speed;
+        enemy.y += (dy / dist) * enemy.speed;
+
+        const hitDist = enemy.size / 2 + player.radius;
+        if (dist < hitDist && player.contactDamageCooldown <= 0) {
+          player.hp -= enemy.damage;
+          player.contactDamageCooldown = 20;
+        }
+      }
+
+      enemies = enemies.filter(enemy => enemy.hp > 0);
+    }
+
+    function updateProjectiles() {
+      for (const p of projectiles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+
+        for (const enemy of enemies) {
+          if (enemy.spawnDelay > 0 || enemy.hp <= 0) continue;
+          const half = enemy.size / 2;
+          if (
+            p.x > enemy.x - half &&
+            p.x < enemy.x + half &&
+            p.y > enemy.y - half &&
+            p.y < enemy.y + half
+          ) {
+            enemy.hp -= p.damage;
+            p.life = 0;
+            damageTexts.push({
+              x: enemy.x,
+              y: enemy.y - 10,
+              text: "-" + p.damage,
+              life: 30
+            });
+            break;
+          }
+        }
+      }
+
+      projectiles = projectiles.filter(p =>
+        p.life > 0 &&
+        p.x >= -20 &&
+        p.x <= canvas.width + 20 &&
+        p.y >= -20 &&
+        p.y <= canvas.height + 20
+      );
+    }
+
+    function updateDamageTexts() {
+      for (const t of damageTexts) {
+        t.y -= 0.6;
+        t.life--;
+      }
+      damageTexts = damageTexts.filter(t => t.life > 0);
+    }
+
+    function checkWaveClear() {
+      if (!running) return;
+
+      const activeEnemies = enemies.filter(e => e.spawnDelay <= 0 && e.hp > 0).length;
+      const delayedEnemies = enemies.filter(e => e.spawnDelay > 0 && e.hp > 0).length;
+
+      if (activeEnemies === 0 && delayedEnemies === 0) {
+        spawnDelayTimer--;
+        if (spawnDelayTimer <= 0) {
+          spawnDelayTimer = 50;
+          nextWave();
+        }
+      } else {
+        spawnDelayTimer = 50;
+      }
+    }
+
+    function drawPlayer() {
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = player.color;
+      ctx.fill();
+
+      // attack range ring
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.range, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    function drawEnemies() {
+      for (const enemy of enemies) {
+        if (enemy.spawnDelay > 0) continue;
+
+        const size = enemy.size;
+        ctx.fillStyle = "#e74c3c";
+        ctx.fillRect(enemy.x - size / 2, enemy.y - size / 2, size, size);
+
+        // enemy hp bar
+        const barW = size;
+        const barH = 4;
+        const pct = Math.max(0, enemy.hp / enemy.maxHp);
+
+        ctx.fillStyle = "#333";
+        ctx.fillRect(enemy.x - barW / 2, enemy.y - size / 2 - 10, barW, barH);
+
+        ctx.fillStyle = "#2ecc71";
+        ctx.fillRect(enemy.x - barW / 2, enemy.y - size / 2 - 10, barW * pct, barH);
+      }
+    }
+
+    function drawProjectiles() {
+      for (const p of projectiles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+      }
+    }
+
+    function drawDamageTexts() {
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px Arial";
+      ctx.textAlign = "center";
+      for (const t of damageTexts) {
+        ctx.globalAlpha = Math.max(0, t.life / 30);
+        ctx.fillText(t.text, t.x, t.y);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawWaveMessage() {
+      if (spawnDelayTimer < 45 && enemies.length === 0) {
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 28px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Wave " + wave + " cleared!", canvas.width / 2, 70);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // subtle grid
+      ctx.strokeStyle = "rgba(255,255,255,0.04)";
+      ctx.lineWidth = 1;
+      const grid = 40;
+      for (let x = 0; x < canvas.width; x += grid) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += grid) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      drawPlayer();
+      drawEnemies();
+      drawProjectiles();
+      drawDamageTexts();
+      drawWaveMessage();
+    }
+
+    function updateHud() {
+      waveText.textContent = wave;
+      enemiesText.textContent = enemies.filter(e => e.hp > 0).length;
+      hpText.textContent = Math.max(0, Math.ceil(player.hp)) + " / " + player.maxHp;
+      hpBar.style.width = Math.max(0, (player.hp / player.maxHp) * 100) + "%";
+      powerText.textContent = player.power;
+    }
+
+    function endGame() {
+      running = false;
+      gameOverText.textContent = "You made it to wave " + wave + ".";
+      gameOverScreen.style.display = "flex";
+    }
+
+    function loop() {
+      if (!running) return;
+
+      updatePlayer();
+      updateEnemies();
+      updateProjectiles();
+      updateDamageTexts();
+      checkWaveClear();
+      updateHud();
+      draw();
+
+      if (player.hp <= 0) {
+        endGame();
+        return;
+      }
+
+      requestAnimationFrame(loop);
+    }
+  </script>
+</body>
+</html>
