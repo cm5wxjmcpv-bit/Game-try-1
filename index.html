@@ -47,7 +47,7 @@
       overflow: hidden;
     }
 
-    .hidden { display: none; }
+    .hidden { display: none !important; pointer-events: none !important; }
 
     .overlay,
     .panel,
@@ -1054,6 +1054,39 @@
       }
     }
 
+
+    function bindUiEvents() {
+      swordBtn.addEventListener("click", () => startGame("sword"));
+      shooterBtn.addEventListener("click", () => startGame("shooter"));
+      continueBtn.addEventListener("click", closeStoreAndContinue);
+      restartBtn.addEventListener("click", restartGame);
+      playAgainBtn.addEventListener("click", restartGame);
+
+      editorToggle.addEventListener("click", () => {
+        setEditorMode(!editorMode);
+      });
+
+      for (const [tool, btn] of Object.entries(editorTools)) {
+        btn.addEventListener("click", () => setEditorTool(tool));
+      }
+
+      editorLevelSelect.addEventListener("change", () => {
+        const idx = Number(editorLevelSelect.value);
+        if (Number.isFinite(idx)) loadLevel(idx);
+      });
+
+      editorDelete.addEventListener("click", () => {
+        if (typeof deleteSelectedEditorObject === "function") {
+          deleteSelectedEditorObject();
+        }
+      });
+
+      editorExport.addEventListener("click", () => {
+        const data = LEVELS[currentLevelIndex] || null;
+        editorOutput.value = JSON.stringify(data, null, 2);
+      });
+    }
+
     function createPlayer(classType) {
       const isSword = classType === "sword";
       return {
@@ -1200,6 +1233,11 @@
 
     function addEffect(type, x, y, life = 18, extra = {}) {
       effects.push({ type, x, y, life, ...extra });
+    }
+
+    function deleteSelectedEditorObject() {
+      selectedEditorObject = null;
+      editorDragging = null;
     }
 
     function addDamageText(x, y, amount, hurt = false) {
@@ -1979,6 +2017,16 @@
       }
     }
 
+    function drawEditorOverlay() {
+      if (!editorMode || !currentLevel) return;
+      ctx.textAlign = "left";
+      ctx.font = "bold 14px Arial";
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(camera.x + 12, camera.y + 12, 260, 34);
+      ctx.fillStyle = "#fff";
+      ctx.fillText(`Editor active: ${activeEditorTool}`, camera.x + 22, camera.y + 34);
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -2029,6 +2077,13 @@
         endGame();
       }
     }
+
+
+    setEditorMode(false);
+    updateEditorToolStyles();
+    refreshEditorLevelDropdown();
+    bindUiEvents();
+
 
     function loop() {
       if (!running || pausedForStore) return;
