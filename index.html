@@ -329,6 +329,10 @@
       <button id="editorDelete" class="secondary">Delete Selected</button>
       <button id="editorExport" class="secondary">Export Level</button>
     </div>
+    <div class="editor-row">
+      <label for="editorLevelSelect" style="font-size:13px; align-self:center;">Editing level:</label>
+      <select id="editorLevelSelect" class="secondary" style="padding:8px 10px; border-radius:8px; border:none; background:#444; color:#fff; font-weight:700;"></select>
+    </div>
     <textarea id="editorOutput" class="editor-input" placeholder="Exported level data appears here"></textarea>
   </div>
 
@@ -351,6 +355,7 @@
     const editorOutput = document.getElementById("editorOutput");
     const editorDelete = document.getElementById("editorDelete");
     const editorExport = document.getElementById("editorExport");
+    const editorLevelSelect = document.getElementById("editorLevelSelect");
 
     const editorTools = {
       wall: document.getElementById("toolWall"),
@@ -473,6 +478,8 @@
     let editorMode = false;
     let activeEditorTool = "wall";
     let selectedEditorObject = null;
+    let editorMouseDown = false;
+    let editorDragging = null;
 
     function buildDefaultWalls(width, height, includeFarSection = false) {
       const walls = [
@@ -618,7 +625,7 @@
           count: 210,
           ruins: [
             [690, 770], [760, 1030], [1550, 730], [1770, 1110],
-            [2710, 760], [3020, 1030], [3600, 760], [3820, 1030]
+            [2740, 760], [2910, 1060], [3600, 760], [3720, 1040]
           ]
         },
         enemyHp: 62,
@@ -831,13 +838,14 @@
             kind: i % 5 === 0 ? "plant" : "stone",
             x: rand(40, spec.mapW - 40),
             y: rand(40, spec.mapH - 40),
-            r: rand(7, 22)
+            r: i % 5 === 0 ? rand(8, 14) : rand(6, 11)
           });
         }
 
         const ruins = decorSpec.ruins || [];
         for (const [x, y] of ruins) {
-          arr.push({ kind: "ruin", x, y, r: rand(12, 20) });
+          arr.push({ kind: "ruin", x, y, r: rand(11, 16) });
+          arr.push({ kind: "ruin", x: x + rand(-22, 22), y: y + rand(-22, 22), r: rand(9, 14) });
         }
 
         return arr;
@@ -845,12 +853,13 @@
 
       for (let i = 0; i < decorSpec.count; i++) {
         arr.push({
-          kind: i % 4 === 0 ? "plant" : "stone",
+          kind: i % 7 === 0 ? "plant" : "stone",
           x: rand(40, spec.mapW - 40),
           y: rand(40, spec.mapH - 40),
-          r: rand(8, 24)
+          r: i % 7 === 0 ? rand(6, 12) : rand(4, 9)
         });
       }
+
       return arr;
     }
 
@@ -860,22 +869,14 @@
       tile.height = 256;
       const tctx = tile.getContext("2d");
 
-      const base = tctx.createLinearGradient(0, 0, 0, tile.height);
-      base.addColorStop(0, shadeColor(spec.bg, 12));
-      base.addColorStop(1, shadeColor(spec.ground2, -12));
-      tctx.fillStyle = base;
+      tctx.fillStyle = spec.bg;
       tctx.fillRect(0, 0, tile.width, tile.height);
 
-      for (let i = 0; i < 360; i++) {
-        const x = rand(0, tile.width);
-        const y = rand(0, tile.height);
-        const r = rand(10, 40);
-        const dirt = tctx.createRadialGradient(x, y, 0, x, y, r);
-        dirt.addColorStop(0, "rgba(90,70,40,0.11)");
-        dirt.addColorStop(1, "rgba(90,70,40,0)");
-        tctx.fillStyle = dirt;
+      for (let i = 0; i < 2200; i++) {
+        const r = rand(0.5, 2.2);
         tctx.beginPath();
-        tctx.arc(x, y, r, 0, Math.PI * 2);
+        tctx.arc(rand(0, tile.width), rand(0, tile.height), r, 0, Math.PI * 2);
+        tctx.fillStyle = i % 2 ? `${spec.ground2}40` : `${spec.accent}26`;
         tctx.fill();
       }
 
@@ -938,6 +939,7 @@
       areaText.textContent = currentLevel.name;
       selectedEditorObject = null;
       refreshEditorToolButtons();
+      refreshEditorLevelDropdown();
     }
 
     function setEditorMode(next) {
@@ -946,6 +948,7 @@
       if (editorMode) editorPanel.classList.remove("hidden");
       else editorPanel.classList.add("hidden");
       selectedEditorObject = null;
+      editorDragging = null;
     }
 
     function setEditorTool(tool) {
@@ -964,6 +967,35 @@
       const screenX = e.clientX - rect.left;
       const screenY = e.clientY - rect.top;
       return { x: screenX + camera.x, y: screenY + camera.y };
+    }
+
+    function refreshEditorLevelDropdown() {
+      if (!editorLevelSelect) return;
+      editorLevelSelect.innerHTML = "";
+      for (let i = 0; i < LEVELS.length; i++) {
+        const option = document.createElement("option");
+        option.value = String(i);
+        option.textContent = `${LEVELS[i].id}. ${LEVELS[i].name}`;
+        editorLevelSelect.appendChild(option);
+      }
+      editorLevelSelect.value = String(currentLevelIndex);
+    }
+
+    function getEditorResizeMode(world, target) {
+      if (!target) return "move";
+      const { tool, ref } = target;
+      if (tool === "camp") {
+        const d = dist(world.x, world.y, ref.x, ref.y);
+        if (Math.abs(d - ref.radius) <= 16) return "resizeCampRadius";
+      }
+      if (tool === "wall" || tool === "bridge") {
+        const nearRight = Math.abs(world.x - (ref.x + ref.w)) <= 18 && world.y >= ref.y - 10 && world.y <= ref.y + ref.h + 10;
+        const nearBottom = Math.abs(world.y - (ref.y + ref.h)) <= 18 && world.x >= ref.x - 10 && world.x <= ref.x + ref.w + 10;
+        if (nearRight && nearBottom) return "resizeRect";
+        if (nearRight) return "resizeRectW";
+        if (nearBottom) return "resizeRectH";
+      }
+      return "move";
     }
 
     function getEditorObjectsByTool(tool) {
@@ -1114,26 +1146,77 @@
       editorOutput.value = JSON.stringify(exported, null, 2);
     }
 
-    canvas.addEventListener("click", e => {
+    canvas.addEventListener("mousedown", e => {
       if (!editorMode || !currentLevel || menu.classList.contains("hidden") === false) return;
       if (!running && !pausedForStore) return;
+
+      editorMouseDown = true;
 
       const world = worldFromCanvasEvent(e);
       const found = findObjectAtPoint(world.x, world.y, activeEditorTool);
       if (found) {
         selectedEditorObject = found;
+        editorDragging = {
+          mode: getEditorResizeMode(world, found),
+          startX: world.x,
+          startY: world.y,
+          original: structuredClone(found.ref)
+        };
       } else {
         placeEditorObject(world.x, world.y, activeEditorTool);
+        editorDragging = null;
       }
+    });
+
+    canvas.addEventListener("mousemove", e => {
+      if (!editorMode || !currentLevel || !editorMouseDown || !selectedEditorObject || !editorDragging) return;
+      const world = worldFromCanvasEvent(e);
+      const { tool, ref } = selectedEditorObject;
+      const dx = world.x - editorDragging.startX;
+      const dy = world.y - editorDragging.startY;
+
+      if ((editorDragging.mode === "resizeRect" || editorDragging.mode === "resizeRectW" || editorDragging.mode === "resizeRectH") && (tool === "wall" || tool === "bridge")) {
+        if (editorDragging.mode === "resizeRect" || editorDragging.mode === "resizeRectW") {
+          ref.w = Math.max(20, Math.round(editorDragging.original.w + dx));
+        }
+        if (editorDragging.mode === "resizeRect" || editorDragging.mode === "resizeRectH") {
+          ref.h = Math.max(20, Math.round(editorDragging.original.h + dy));
+        }
+      } else if (editorDragging.mode === "resizeCampRadius" && tool === "camp") {
+        ref.radius = Math.max(40, Math.round(dist(world.x, world.y, ref.x, ref.y)));
+      } else {
+        ref.x = Math.round(editorDragging.original.x + dx);
+        ref.y = Math.round(editorDragging.original.y + dy);
+      }
+
+      if (tool === "wall") {
+        currentLevel.obstacles = buildObstacles(currentLevel);
+      }
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      editorMouseDown = false;
+      editorDragging = null;
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+      editorMouseDown = false;
+      editorDragging = null;
     });
 
     editorToggle.addEventListener("click", () => setEditorMode(!editorMode));
     editorDelete.addEventListener("click", deleteSelectedEditorObject);
     editorExport.addEventListener("click", exportCurrentLevelData);
+    editorLevelSelect.addEventListener("change", () => {
+      const nextIndex = clamp(parseInt(editorLevelSelect.value, 10) || 0, 0, LEVELS.length - 1);
+      loadLevel(nextIndex);
+    });
 
     for (const tool of Object.keys(editorTools)) {
       editorTools[tool].addEventListener("click", () => setEditorTool(tool));
     }
+
+    refreshEditorLevelDropdown();
 
     function drawEditorOverlay() {
       if (!editorMode || !currentLevel) return;
@@ -1217,184 +1300,158 @@
       player.x = clamp(player.x, player.radius, currentLevel.mapW - player.radius);
       player.y = clamp(player.y, player.radius, currentLevel.mapH - player.radius);
 
-      for (const obstacle of currentLevel.obstacles) {
-        if (obstacleBlocksMovement(obstacle, player)) {
-          resolveCircleRectCollision(player, obstacle);
-        }
+      for (const o of currentLevel.obstacles) {
+        if (!obstacleBlocksMovement(o, player)) continue;
+        resolveCircleRectCollision(player, o);
       }
 
-      if (player.contactDamageCooldown > 0) player.contactDamageCooldown--;
-
-      attackTimer--;
-      if (attackTimer <= 0) {
-        autoAttack();
-        attackTimer = Math.max(6, Math.round(player.attackCooldown));
-      }
-    }
-
-    function autoAttack() {
-      const allTargets = [];
-
-      for (const enemy of enemies) {
-        if (enemy.hp > 0 && dist(player.x, player.y, enemy.x, enemy.y) <= player.range) {
-          allTargets.push({ type: "enemy", obj: enemy, d: dist(player.x, player.y, enemy.x, enemy.y) });
-        }
+      if (player.contactDamageCooldown > 0) {
+        player.contactDamageCooldown--;
       }
 
-      for (const d of destructibles) {
-        if (!d.dead && dist(player.x, player.y, d.x, d.y) <= player.range) {
-          allTargets.push({ type: "destructible", obj: d, d: dist(player.x, player.y, d.x, d.y) });
-        }
-      }
-
-      if (!allTargets.length) return;
-
-      if (player.classType === "sword") {
-        const range = player.range + player.swordRangeBonus;
-        let didHit = false;
-
-        for (const enemy of enemies) {
-          if (enemy.hp > 0 && dist(player.x, player.y, enemy.x, enemy.y) <= range) {
-            applyDamageToEnemy(enemy, player.power);
-            didHit = true;
-          }
-        }
-
-        for (const d of destructibles) {
-          if (!d.dead && dist(player.x, player.y, d.x, d.y) <= range) {
-            applyDamageToDestructible(d, player.power);
-            didHit = true;
-          }
-        }
-
-        if (didHit) {
-          effects.push({
-            type: "swing",
-            x: player.x,
-            y: player.y,
-            radius: range,
-            life: 8
-          });
-        }
-      } else {
-        const sorted = allTargets.sort((a, b) => a.d - b.d).slice(0, player.projectileCount);
-        for (const target of sorted) {
-          const angle = Math.atan2(target.obj.y - player.y, target.obj.x - player.x);
-          projectiles.push({
-            x: player.x,
-            y: player.y,
-            vx: Math.cos(angle) * player.projectileSpeed,
-            vy: Math.sin(angle) * player.projectileSpeed,
-            size: player.projectileSize,
-            damage: player.power,
-            life: 90
-          });
-        }
+      attackTimer++;
+      if (attackTimer >= player.attackCooldown) {
+        attackTimer = 0;
+        if (player.classType === "sword") swordAttack();
+        else shootAttack();
       }
     }
 
-    function applyDamageToEnemy(enemy, amount) {
-      enemy.hp -= amount;
-      enemy.hitFlash = 4;
-      damageTexts.push({
-        x: enemy.x,
-        y: enemy.y - 18,
-        text: "-" + amount,
-        life: 28,
-        hurt: false
+    function swordAttack() {
+      let best = null;
+      let bestD = Infinity;
+
+      for (const e of enemies) {
+        if (e.hp <= 0) continue;
+        const d = dist(player.x, player.y, e.x, e.y);
+        if (d < player.range + player.swordRangeBonus && d < bestD) {
+          best = e;
+          bestD = d;
+        }
+      }
+
+      if (!best) return;
+
+      const dmg = player.power;
+      best.hp -= dmg;
+      best.hitFlash = 3;
+      best.aggro = true;
+      damageTexts.push({ x: best.x, y: best.y - 24, text: `-${Math.round(dmg)}`, life: 28, hurt: true });
+
+      effects.push({
+        type: "swing",
+        x: player.x,
+        y: player.y,
+        radius: player.range + player.swordRangeBonus,
+        life: 8
       });
+
+      if (best.hp <= 0) {
+        enemyKilled(best);
+      }
     }
 
-    function applyDamageToDestructible(d, amount) {
-      d.hp -= amount;
-      d.hitFlash = 4;
-      damageTexts.push({
-        x: d.x,
-        y: d.y - 18,
-        text: "-" + amount,
-        life: 24,
-        hurt: false
-      });
+    function shootAttack() {
+      const targets = enemies
+        .filter(e => e.hp > 0)
+        .map(e => ({ e, d: dist(player.x, player.y, e.x, e.y) }))
+        .filter(item => item.d <= player.range)
+        .sort((a, b) => a.d - b.d)
+        .slice(0, player.projectileCount);
+
+      for (const item of targets) {
+        const e = item.e;
+        const angle = Math.atan2(e.y - player.y, e.x - player.x);
+        projectiles.push({
+          x: player.x,
+          y: player.y,
+          vx: Math.cos(angle) * player.projectileSpeed,
+          vy: Math.sin(angle) * player.projectileSpeed,
+          damage: player.power,
+          size: player.projectileSize,
+          life: 90
+        });
+      }
     }
 
-    function spawnCoinsAt(x, y, amount) {
+    function enemyKilled(enemy) {
+      enemy.hp = 0;
       coins.push({
-        x,
-        y,
-        radius: 9,
-        amount,
-        life: 900
+        x: enemy.x,
+        y: enemy.y,
+        value: enemy.money,
+        radius: 8,
+        vx: rand(-1, 1),
+        vy: rand(-1.5, -0.3),
+        life: 600
       });
+
+      effects.push({ type: "coin", x: enemy.x, y: enemy.y, life: 16 });
+
+      const alive = enemies.filter(e => e.hp > 0).length;
+      if (alive <= 0) {
+        currentLevel.portal.open = true;
+      }
     }
 
     function updateEnemies() {
       for (const enemy of enemies) {
         if (enemy.hp <= 0) continue;
+
         if (enemy.hitFlash > 0) enemy.hitFlash--;
 
-        const dToPlayer = dist(player.x, player.y, enemy.x, enemy.y);
+        const dToPlayer = dist(enemy.x, enemy.y, player.x, player.y);
 
-        if (!enemy.aggro && dToPlayer <= enemy.aggroRange) {
+        if (!enemy.aggro && dToPlayer < enemy.aggroRange) {
           enemy.aggro = true;
+        }
+
+        if (enemy.aggro) {
+          if (dToPlayer > enemy.leashRange && dist(enemy.x, enemy.y, enemy.campX, enemy.campY) > enemy.campRadius + 90) {
+            enemy.aggro = false;
+          }
         }
 
         let tx = enemy.homeX;
         let ty = enemy.homeY;
 
         if (enemy.aggro) {
-          const dHomeToPlayer = dist(player.x, player.y, enemy.homeX, enemy.homeY);
-          if (dHomeToPlayer > enemy.leashRange) {
-            enemy.aggro = false;
-          } else {
-            tx = player.x;
-            ty = player.y;
+          tx = player.x;
+          ty = player.y;
+        } else {
+          if (dist(enemy.x, enemy.y, enemy.homeX, enemy.homeY) < 8) {
+            enemy.homeX = enemy.campX + rand(-enemy.campRadius * 0.5, enemy.campRadius * 0.5);
+            enemy.homeY = enemy.campY + rand(-enemy.campRadius * 0.5, enemy.campRadius * 0.5);
           }
+          tx = enemy.homeX;
+          ty = enemy.homeY;
         }
 
         let dx = tx - enemy.x;
         let dy = ty - enemy.y;
         const len = Math.hypot(dx, dy);
-
-        if (len > 1) {
+        if (len > 0) {
           dx /= len;
           dy /= len;
           enemy.x += dx * enemy.speed;
           enemy.y += dy * enemy.speed;
         }
 
-        for (const obstacle of currentLevel.obstacles) {
-          if (obstacleBlocksMovement(obstacle, enemy)) {
-            resolveCircleRectCollision(enemy, obstacle);
-          }
+        enemy.x = clamp(enemy.x, enemy.radius, currentLevel.mapW - enemy.radius);
+        enemy.y = clamp(enemy.y, enemy.radius, currentLevel.mapH - enemy.radius);
+
+        for (const o of currentLevel.obstacles) {
+          if (!obstacleBlocksMovement(o, enemy)) continue;
+          resolveCircleRectCollision(enemy, o);
         }
 
-        const touch = player.radius + enemy.radius;
-        const d = dist(player.x, player.y, enemy.x, enemy.y);
-
-        if (d <= touch && player.contactDamageCooldown <= 0) {
-          const dealt = Math.max(1, Math.round(enemy.damage * (1 - player.armor)));
-          player.hp -= dealt;
+        const hitPlayer = dist(enemy.x, enemy.y, player.x, player.y) < enemy.radius + player.radius;
+        if (hitPlayer && player.contactDamageCooldown === 0) {
+          const dmg = enemy.damage * (1 - player.armor);
+          player.hp -= dmg;
           player.contactDamageCooldown = 18;
-
-          damageTexts.push({
-            x: player.x,
-            y: player.y - 26,
-            text: "-" + dealt,
-            life: 24,
-            hurt: true
-          });
+          damageTexts.push({ x: player.x, y: player.y - 26, text: `-${Math.round(dmg)}`, life: 28, hurt: true });
         }
-      }
-
-      const dead = enemies.filter(e => e.hp <= 0);
-      for (const enemy of dead) {
-        spawnCoinsAt(enemy.x, enemy.y, enemy.money);
-      }
-
-      enemies = enemies.filter(e => e.hp > 0);
-
-      if (enemies.length === 0) {
-        currentLevel.portal.open = true;
       }
     }
 
@@ -1403,67 +1460,92 @@
         if (d.dead) continue;
         if (d.hitFlash > 0) d.hitFlash--;
 
-        if (d.hp <= 0) {
-          d.dead = true;
-          spawnCoinsAt(d.x, d.y, d.reward);
-          effects.push({ type: "break", x: d.x, y: d.y, life: 20 });
+        if (player.classType === "sword") {
+          const range = player.range * 0.6;
+          if (dist(player.x, player.y, d.x, d.y) <= range + d.radius) {
+            if (attackTimer === 0) {
+              d.hp -= player.power * 0.7;
+              d.hitFlash = 3;
+              if (d.hp <= 0) {
+                d.dead = true;
+                player.money += d.reward;
+                effects.push({ type: "break", x: d.x, y: d.y, life: 20 });
+              }
+            }
+          }
+        }
+
+        for (const p of projectiles) {
+          if (p.life <= 0) continue;
+          if (dist(p.x, p.y, d.x, d.y) <= d.radius + p.size) {
+            d.hp -= p.damage * 0.55;
+            d.hitFlash = 3;
+            p.life = 0;
+            if (d.hp <= 0) {
+              d.dead = true;
+              player.money += d.reward;
+              effects.push({ type: "break", x: d.x, y: d.y, life: 20 });
+            }
+          }
         }
       }
     }
 
     function updateProjectiles() {
       for (const p of projectiles) {
+        if (p.life <= 0) continue;
         p.x += p.vx;
         p.y += p.vy;
         p.life--;
 
-        for (const obstacle of currentLevel.obstacles) {
-          if (circleRectCollision(p.x, p.y, p.size, obstacle)) {
-            p.life = 0;
+        if (p.x < 0 || p.y < 0 || p.x > currentLevel.mapW || p.y > currentLevel.mapH) {
+          p.life = 0;
+          continue;
+        }
+
+        let blocked = false;
+        for (const o of currentLevel.obstacles) {
+          if (o.type === "slime") continue;
+          if (p.x > o.x && p.x < o.x + o.w && p.y > o.y && p.y < o.y + o.h) {
+            blocked = true;
             break;
           }
         }
-
-        if (p.life <= 0) continue;
+        if (blocked) {
+          p.life = 0;
+          continue;
+        }
 
         for (const enemy of enemies) {
           if (enemy.hp <= 0) continue;
-          if (dist(p.x, p.y, enemy.x, enemy.y) <= p.size + enemy.radius) {
-            applyDamageToEnemy(enemy, p.damage);
+          if (dist(p.x, p.y, enemy.x, enemy.y) <= enemy.radius + p.size) {
+            enemy.hp -= p.damage;
+            enemy.hitFlash = 3;
+            enemy.aggro = true;
+            damageTexts.push({ x: enemy.x, y: enemy.y - 22, text: `-${Math.round(p.damage)}`, life: 28, hurt: true });
             p.life = 0;
-            break;
-          }
-        }
-
-        if (p.life <= 0) continue;
-
-        for (const d of destructibles) {
-          if (d.dead) continue;
-          if (dist(p.x, p.y, d.x, d.y) <= p.size + d.radius) {
-            applyDamageToDestructible(d, p.damage);
-            p.life = 0;
+            if (enemy.hp <= 0) enemyKilled(enemy);
             break;
           }
         }
       }
 
-      projectiles = projectiles.filter(p =>
-        p.life > 0 &&
-        p.x >= -10 &&
-        p.x <= currentLevel.mapW + 10 &&
-        p.y >= -10 &&
-        p.y <= currentLevel.mapH + 10
-      );
+      projectiles = projectiles.filter(p => p.life > 0);
     }
 
     function updateCoins() {
-      for (const coin of coins) {
-        coin.life--;
+      for (const c of coins) {
+        c.vy += 0.08;
+        c.x += c.vx;
+        c.y += c.vy;
+        c.life--;
 
-        if (dist(player.x, player.y, coin.x, coin.y) <= player.radius + coin.radius + 8) {
-          player.money += coin.amount;
-          effects.push({ type: "coin", x: coin.x, y: coin.y, life: 16 });
-          coin.life = 0;
+        c.vx *= 0.98;
+        c.vy *= 0.98;
+
+        if (dist(c.x, c.y, player.x, player.y) < player.radius + c.radius + 4) {
+          player.money += c.value;
+          c.life = 0;
         }
       }
 
@@ -1477,130 +1559,120 @@
 
     function updateDamageTexts() {
       for (const t of damageTexts) {
-        t.y -= 0.55;
+        t.y -= 0.5;
         t.life--;
       }
       damageTexts = damageTexts.filter(t => t.life > 0);
     }
 
-    function updatePortalAndStore() {
-      if (!currentLevel.portal.open) return;
-
-      const dPortal = dist(player.x, player.y, currentLevel.portal.x, currentLevel.portal.y);
-      if (dPortal <= player.radius + currentLevel.portal.radius) {
-        openStore();
-      }
-    }
-
-    function openStore() {
-      running = false;
-      pausedForStore = true;
-      storeScreen.classList.remove("hidden");
-      renderStore();
-    }
-
-    const storeItems = [
+    const UPGRADES = [
       {
-        name: "Damage Upgrade",
-        desc: "+6 damage",
-        cost: 35,
-        apply() { player.power += 6; }
-      },
-      {
-        name: "Attack Speed",
-        desc: "Attack faster",
-        cost: 40,
-        apply() { player.attackCooldown = Math.max(6, player.attackCooldown - 2); }
-      },
-      {
-        name: "Move Speed",
-        desc: "+0.4 speed",
-        cost: 30,
-        apply() { player.speed += 0.4; }
-      },
-      {
-        name: "Max Health",
-        desc: "+25 max HP and heal 20",
-        cost: 45,
+        id: "hp",
+        name: "+20 Max HP",
+        cost: 80,
+        desc: "Increase survivability with more max health.",
         apply() {
-          player.maxHp += 25;
-          player.hp = Math.min(player.maxHp, player.hp + 20);
+          player.maxHp += 20;
+          player.hp += 20;
         }
       },
       {
-        name: "Armor",
-        desc: "Take 7% less damage",
-        cost: 50,
-        apply() { player.armor = Math.min(0.5, player.armor + 0.07); }
+        id: "power",
+        name: "+6 Damage",
+        cost: 90,
+        desc: "Increase base attack damage.",
+        apply() {
+          player.power += 6;
+        }
       },
       {
-        name: "Range Upgrade",
-        desc: "+35 attack range",
-        cost: 35,
-        apply() { player.range += 35; }
+        id: "speed",
+        name: "+0.25 Move Speed",
+        cost: 75,
+        desc: "Move faster around large levels.",
+        apply() {
+          player.speed += 0.25;
+        }
       },
       {
-        name: "Extra Shot",
-        desc: "+1 projectile per attack",
-        cost: 65,
-        only: "shooter",
-        apply() { player.projectileCount += 1; }
+        id: "armor",
+        name: "+6% Armor",
+        cost: 110,
+        desc: "Reduce incoming damage from enemies.",
+        apply() {
+          player.armor = clamp(player.armor + 0.06, 0, 0.65);
+        }
       },
       {
-        name: "Bullet Speed",
-        desc: "+2 projectile speed",
-        cost: 30,
-        only: "shooter",
-        apply() { player.projectileSpeed += 2; }
+        id: "attack",
+        name: "Faster Attacks",
+        cost: 120,
+        desc: "Lower attack cooldown.",
+        apply() {
+          player.attackCooldown = Math.max(8, player.attackCooldown - 2);
+        }
       },
       {
-        name: "Longer Sword Reach",
-        desc: "+24 sword range",
-        cost: 40,
-        only: "sword",
-        apply() { player.swordRangeBonus += 24; }
+        id: "projectile",
+        name: "Shooter: +1 Projectile",
+        cost: 150,
+        desc: "Shooter class only.",
+        apply() {
+          if (player.classType === "shooter") {
+            player.projectileCount = Math.min(4, player.projectileCount + 1);
+          }
+        }
       },
       {
-        name: "Heal",
-        desc: "Restore 35 HP",
-        cost: 28,
-        apply() { player.hp = Math.min(player.maxHp, player.hp + 35); }
+        id: "swordRange",
+        name: "Sword: +18 Slash Range",
+        cost: 140,
+        desc: "Sword class only.",
+        apply() {
+          if (player.classType === "sword") {
+            player.swordRangeBonus += 18;
+          }
+        }
       }
     ];
 
-    function renderStore() {
-      storeMoneyText.textContent = player.money;
+    function openStore() {
+      pausedForStore = true;
+      running = false;
+      storeScreen.classList.remove("hidden");
+      populateStore();
+    }
+
+    function populateStore() {
+      storeMoneyText.textContent = String(Math.floor(player.money));
       storeGrid.innerHTML = "";
 
-      const available = storeItems.filter(item => !item.only || item.only === player.classType);
-
-      available.forEach(item => {
+      for (const up of UPGRADES) {
         const card = document.createElement("div");
         card.className = "store-card";
-
         const title = document.createElement("h3");
-        title.textContent = `${item.name} - $${item.cost}`;
-
+        title.textContent = `${up.name} ($${up.cost})`;
         const desc = document.createElement("p");
-        desc.textContent = item.desc;
+        desc.textContent = up.desc;
 
-        const btn = document.createElement("button");
-        btn.textContent = player.money >= item.cost ? "Buy" : "Not Enough Money";
-        btn.disabled = player.money < item.cost;
-        btn.style.opacity = player.money >= item.cost ? "1" : "0.6";
-
-        btn.addEventListener("click", () => {
-          if (player.money < item.cost) return;
-          player.money -= item.cost;
-          item.apply();
-          renderStore();
+        const buyBtn = document.createElement("button");
+        buyBtn.textContent = "Buy";
+        buyBtn.className = "secondary";
+        buyBtn.disabled = player.money < up.cost;
+        buyBtn.style.opacity = buyBtn.disabled ? "0.5" : "1";
+        buyBtn.addEventListener("click", () => {
+          if (player.money < up.cost) return;
+          player.money -= up.cost;
+          up.apply();
+          populateStore();
+          updateHud();
         });
 
         card.appendChild(title);
         card.appendChild(desc);
-        card.appendChild(btn);
+        card.appendChild(buyBtn);
         storeGrid.appendChild(card);
-      });
+      }
     }
 
     continueBtn.addEventListener("click", () => {
@@ -1608,380 +1680,268 @@
       pausedForStore = false;
 
       if (currentLevelIndex >= LEVELS.length - 1) {
-        winText.textContent = `You finished all 5 levels with $${player.money} left.`;
+        running = false;
+        winText.textContent = `Final Stats — HP: ${Math.round(player.hp)} / ${player.maxHp}, Money: $${Math.round(player.money)}.`;
         winScreen.classList.remove("hidden");
         return;
       }
 
-      loadLevel(currentLevelIndex + 1);
+      currentLevelIndex++;
+      loadLevel(currentLevelIndex);
+      running = true;
       loop();
     });
 
-    function updateCamera() {
-      camera.x = player.x - canvas.width / 2;
-      camera.y = player.y - canvas.height / 2;
+    function updatePortalAndStore() {
+      const aliveEnemies = enemies.filter(e => e.hp > 0).length;
+      if (aliveEnemies <= 0) {
+        currentLevel.portal.open = true;
+      }
 
-      camera.x = clamp(camera.x, 0, Math.max(0, currentLevel.mapW - canvas.width));
-      camera.y = clamp(camera.y, 0, Math.max(0, currentLevel.mapH - canvas.height));
-    }
+      const inStoreZone =
+        player.x > currentLevel.storeZone.x &&
+        player.x < currentLevel.storeZone.x + currentLevel.storeZone.w &&
+        player.y > currentLevel.storeZone.y &&
+        player.y < currentLevel.storeZone.y + currentLevel.storeZone.h;
 
-    function updateHud() {
-      levelText.textContent = String(currentLevelIndex + 1);
-      areaText.textContent = currentLevel.name;
-      enemiesText.textContent = enemies.length;
-      hpText.textContent = `${Math.max(0, Math.ceil(player.hp))} / ${player.maxHp}`;
-      hpBar.style.width = `${clamp((player.hp / player.maxHp) * 100, 0, 100)}%`;
-      moneyText.textContent = player.money;
-      powerText.textContent = player.power;
-      attackText.textContent = (60 / Math.max(6, Math.round(player.attackCooldown))).toFixed(1) + "/sec";
-      speedText.textContent = player.speed.toFixed(1);
-      armorText.textContent = `${Math.round(player.armor * 100)}%`;
-      portalText.textContent = currentLevel.portal.open ? "Open" : "Locked";
+      if (currentLevel.portal.open && inStoreZone && !pausedForStore) {
+        openStore();
+      }
     }
 
     function endGame() {
       running = false;
       pausedForStore = false;
-      gameOverText.textContent = `You reached level ${currentLevelIndex + 1} and had $${player.money}.`;
+      gameOverText.textContent = `You reached level ${currentLevelIndex + 1}.`;
       gameOverScreen.classList.remove("hidden");
     }
 
+    function updateHud() {
+      hpText.textContent = `${Math.max(0, Math.round(player.hp))} / ${player.maxHp}`;
+      hpBar.style.width = `${clamp((player.hp / player.maxHp) * 100, 0, 100)}%`;
+      moneyText.textContent = String(Math.floor(player.money));
+      powerText.textContent = String(Math.round(player.power));
+      attackText.textContent = `${(60 / player.attackCooldown).toFixed(2)} /s`;
+      speedText.textContent = player.speed.toFixed(2);
+      armorText.textContent = `${Math.round(player.armor * 100)}%`;
+
+      levelText.textContent = String(currentLevelIndex + 1);
+      areaText.textContent = currentLevel.name;
+      enemiesText.textContent = String(enemies.filter(e => e.hp > 0).length);
+      portalText.textContent = currentLevel.portal.open ? "Open" : "Locked";
+    }
+
     function drawWorldBackground() {
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, currentLevel.mapH);
-      skyGrad.addColorStop(0, shadeColor(currentLevel.bg, 16));
-      skyGrad.addColorStop(1, shadeColor(currentLevel.bg, -20));
-      ctx.fillStyle = skyGrad;
+      ctx.fillStyle = terrainTexture || currentLevel.bg;
       ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
 
-      if (terrainTexture) {
-        ctx.globalAlpha = 0.78;
-        ctx.fillStyle = terrainTexture;
-        ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
-        ctx.globalAlpha = 1;
+      const stripeCount = Math.ceil(currentLevel.mapW / 180);
+      ctx.globalAlpha = 0.06;
+      for (let i = 0; i < stripeCount; i++) {
+        ctx.fillStyle = i % 2 ? currentLevel.ground2 : currentLevel.accent;
+        ctx.fillRect(i * 180, 0, 90, currentLevel.mapH);
       }
+      ctx.globalAlpha = 1;
+    }
 
-      for (let i = 0; i < currentLevel.mapW; i += 240) {
-        const yBase = currentLevel.mapH * 0.18 + Math.sin(i * 0.0027) * 35;
-        const patch = ctx.createRadialGradient(i + 90, yBase + 260, 10, i + 90, yBase + 260, 220);
-        patch.addColorStop(0, "rgba(110,90,58,0.12)");
-        patch.addColorStop(1, "rgba(110,90,58,0)");
-        ctx.fillStyle = patch;
-        ctx.beginPath();
-        ctx.ellipse(i + 90, yBase + 260, 220, 120, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      for (let band = 0; band < 5; band++) {
-        ctx.fillStyle = band % 2 === 0 ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)";
-        ctx.beginPath();
-        const y0 = 220 + band * 260;
-        ctx.moveTo(0, y0);
-        for (let x = 0; x <= currentLevel.mapW; x += 160) {
-          ctx.lineTo(x, y0 + Math.sin((x + band * 100) * 0.0042) * (14 + band * 2));
-        }
-        ctx.lineTo(currentLevel.mapW, y0 + 190);
-        ctx.lineTo(0, y0 + 210);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      if (currentLevel.name === "Crimson Flats") {
-        const wornPath = [
-          [200, 910, 560, 210], [760, 910, 520, 220], [1280, 1030, 560, 210],
-          [1840, 930, 420, 170], [2260, 900, 360, 160], [2620, 900, 520, 210],
-          [3140, 900, 470, 190], [3600, 920, 480, 220]
-        ];
-        for (const p of wornPath) {
-          const g = ctx.createRadialGradient(p[0], p[1], 40, p[0], p[1], p[2] * 0.45);
-          g.addColorStop(0, "rgba(90,55,38,0.16)");
-          g.addColorStop(1, "rgba(90,55,38,0)");
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.ellipse(p[0], p[1], p[2], p[3], 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        const chasm = ctx.createLinearGradient(2260, 640, 2260, 1180);
-        chasm.addColorStop(0, "rgba(20,12,10,0.58)");
-        chasm.addColorStop(0.5, "rgba(8,6,7,0.78)");
-        chasm.addColorStop(1, "rgba(20,12,10,0.58)");
-        ctx.fillStyle = chasm;
-        ctx.fillRect(2230, 620, 380, 560);
-      }
-
+    function drawDecorations() {
       for (const d of currentLevel.decor) {
         if (d.kind === "stone") {
-          const pebble = ctx.createRadialGradient(d.x - d.r * 0.35, d.y - d.r * 0.35, 2, d.x, d.y, d.r);
-          pebble.addColorStop(0, "rgba(255,255,255,0.09)");
-          pebble.addColorStop(1, "rgba(40,35,30,0.24)");
-          ctx.fillStyle = pebble;
           ctx.beginPath();
           ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(0,0,0,0.2)";
           ctx.fill();
-        } else if (d.kind === "ruin") {
-          ctx.fillStyle = "rgba(70,55,45,0.55)";
-          ctx.fillRect(d.x - d.r, d.y - d.r * 0.65, d.r * 2, d.r * 1.3);
-          ctx.strokeStyle = "rgba(25,18,16,0.4)";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(d.x - d.r, d.y - d.r * 0.65, d.r * 2, d.r * 1.3);
-          ctx.fillStyle = "rgba(210,180,140,0.12)";
-          ctx.fillRect(d.x - d.r + 4, d.y - d.r * 0.45, d.r * 1.4, 5);
-        } else {
-          ctx.fillStyle = currentLevel.accent;
-          ctx.globalAlpha = 0.14;
           ctx.beginPath();
-          ctx.ellipse(d.x, d.y, d.r * 1.5, d.r * 0.9, Math.sin(d.x) * 0.4, 0, Math.PI * 2);
+          ctx.arc(d.x - d.r * 0.25, d.y - d.r * 0.2, d.r * 0.7, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255,255,255,0.07)";
           ctx.fill();
+        } else if (d.kind === "plant") {
+          ctx.strokeStyle = shadeColor(currentLevel.accent, -30);
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y + d.r);
+          ctx.lineTo(d.x - d.r * 0.6, d.y - d.r * 0.7);
+          ctx.moveTo(d.x, d.y + d.r * 0.9);
+          ctx.lineTo(d.x + d.r * 0.6, d.y - d.r * 0.6);
+          ctx.stroke();
+        } else if (d.kind === "ruin") {
+          ctx.fillStyle = "rgba(40,30,20,0.45)";
+          ctx.fillRect(d.x - d.r, d.y - d.r * 0.8, d.r * 2, d.r * 1.6);
+          ctx.fillStyle = "rgba(120,90,70,0.25)";
+          ctx.fillRect(d.x - d.r * 0.5, d.y - d.r * 0.4, d.r, d.r * 0.8);
+        }
+      }
+    }
+
+    function drawCampMarkers() {
+      for (const c of currentLevel.camps) {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,100,100,0.22)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function drawObstacles() {
+      drawDecorations();
+
+      for (const o of currentLevel.obstacles) {
+        if (o.type === "rock") {
+          const grd = ctx.createLinearGradient(o.x, o.y, o.x + o.w, o.y + o.h);
+          grd.addColorStop(0, shadeColor(currentLevel.obstacleColor, 12));
+          grd.addColorStop(1, shadeColor(currentLevel.obstacleColor, -12));
+          ctx.fillStyle = grd;
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+
+          ctx.strokeStyle = "rgba(255,255,255,0.1)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(o.x + 2, o.y + 2, o.w - 4, o.h - 4);
+        } else if (o.type === "caveWall") {
+          ctx.fillStyle = shadeColor(currentLevel.obstacleColor, -8);
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+
+          ctx.strokeStyle = "rgba(255,255,255,0.06)";
+          ctx.lineWidth = 3;
+          for (let y = o.y + 12; y < o.y + o.h; y += 22) {
+            ctx.beginPath();
+            ctx.moveTo(o.x + 6, y);
+            ctx.lineTo(o.x + o.w - 6, y + rand(-2, 2));
+            ctx.stroke();
+          }
+        } else if (o.type === "pillar") {
+          ctx.fillStyle = shadeColor(currentLevel.obstacleColor, 8);
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.strokeStyle = "rgba(0,0,0,0.25)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(o.x, o.y, o.w, o.h);
+        } else if (o.type === "slime") {
+          ctx.fillStyle = `${currentLevel.slimeColor}b0`;
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+
+          ctx.globalAlpha = 0.26;
+          ctx.fillStyle = "#fff";
+          for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.arc(
+              o.x + (i + 0.5) * (o.w / 5) + Math.sin(frameCount * 0.04 + i) * 4,
+              o.y + o.h * (0.35 + 0.2 * Math.sin(frameCount * 0.03 + i)),
+              8 + Math.sin(frameCount * 0.06 + i) * 2,
+              0,
+              Math.PI * 2
+            );
+            ctx.fill();
+          }
           ctx.globalAlpha = 1;
         }
       }
 
       for (const b of currentLevel.bridges) {
-        if (currentLevel.name === "Crimson Flats") {
-          ctx.fillStyle = "rgba(0,0,0,0.34)";
-          ctx.fillRect(b.x + 10, b.y + b.h - 4, b.w - 20, 16);
-        }
-
-        const wood = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
-        wood.addColorStop(0, shadeColor(currentLevel.bridgeColor, 24));
-        wood.addColorStop(0.5, currentLevel.bridgeColor);
-        wood.addColorStop(1, shadeColor(currentLevel.bridgeColor, -24));
-        ctx.fillStyle = wood;
+        const grd = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
+        grd.addColorStop(0, shadeColor(currentLevel.bridgeColor, 18));
+        grd.addColorStop(1, shadeColor(currentLevel.bridgeColor, -16));
+        ctx.fillStyle = grd;
         ctx.fillRect(b.x, b.y, b.w, b.h);
-        for (let i = 0; i < b.w; i += 16) {
-          ctx.fillStyle = "rgba(70,40,20,0.32)";
-          ctx.fillRect(b.x + i, b.y + 2, 7, b.h - 4);
-        }
-        if (currentLevel.name === "Crimson Flats") {
-          for (let i = 0; i <= b.w; i += 28) {
-            ctx.fillStyle = "rgba(55,34,20,0.9)";
-            ctx.fillRect(b.x + i - 2, b.y - 12, 4, 12);
-            ctx.fillRect(b.x + i - 2, b.y + b.h, 4, 12);
-          }
-          ctx.fillStyle = "rgba(110,78,52,0.9)";
-          ctx.fillRect(b.x, b.y - 6, b.w, 5);
-          ctx.fillRect(b.x, b.y + b.h + 1, b.w, 5);
-        }
-        ctx.strokeStyle = "rgba(0,0,0,0.28)";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1);
-      }
 
-      drawTunnelShadows();
-      drawAtmosphere();
-    }
-
-    function drawAtmosphere() {
-      const cx = camera.x + canvas.width * 0.55;
-      const cy = camera.y + canvas.height * 0.45;
-      const fog = ctx.createRadialGradient(cx, cy, 120, cx, cy, Math.max(canvas.width, canvas.height));
-      fog.addColorStop(0, "rgba(255,255,255,0.03)");
-      fog.addColorStop(1, "rgba(0,0,0,0.18)");
-      ctx.fillStyle = fog;
-      ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
-    }
-
-    function drawTunnelShadows() {
-      const tunnels = currentLevel.obstacles.filter(o => o.type === "caveWall");
-      for (const o of tunnels) {
-        ctx.fillStyle = "rgba(0,0,0,0.16)";
-        if (o.y === 0) {
-          ctx.fillRect(o.x, o.h - 26, o.w, 26);
-        } else {
-          ctx.fillRect(o.x, o.y, o.w, 26);
-        }
-      }
-    }
-
-    function drawObstacles() {
-      for (const o of currentLevel.obstacles) {
-        const shadowOffset = 6;
-        ctx.fillStyle = "rgba(0,0,0,0.2)";
-        ctx.fillRect(o.x + shadowOffset, o.y + shadowOffset, o.w, o.h);
-
-        if (o.type === "slime") {
-          const slime = ctx.createLinearGradient(o.x, o.y, o.x, o.y + o.h);
-          slime.addColorStop(0, shadeColor(currentLevel.slimeColor, 20));
-          slime.addColorStop(1, shadeColor(currentLevel.slimeColor, -35));
-          ctx.fillStyle = slime;
-          ctx.globalAlpha = 0.78;
-          ctx.fillRect(o.x, o.y, o.w, o.h);
-          ctx.globalAlpha = 1;
-          for (let i = 0; i < 6; i++) {
-            ctx.fillStyle = "rgba(255,255,255,0.1)";
-            ctx.beginPath();
-            ctx.arc(o.x + (i + 1) * (o.w / 7), o.y + 12 + Math.sin(frameCount * 0.06 + i) * 4, 4, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          ctx.strokeStyle = "rgba(255,255,255,0.25)";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(o.x, o.y, o.w, o.h);
-        } else if (o.type === "pillar") {
-          const g = ctx.createLinearGradient(o.x, o.y, o.x + o.w, o.y + o.h);
-          g.addColorStop(0, shadeColor(currentLevel.obstacleColor, 18));
-          g.addColorStop(1, shadeColor(currentLevel.obstacleColor, -22));
-          ctx.fillStyle = g;
-          ctx.fillRect(o.x, o.y, o.w, o.h);
-          ctx.strokeStyle = "rgba(0,0,0,0.42)";
-          ctx.lineWidth = 3;
-          ctx.strokeRect(o.x + 1, o.y + 1, o.w - 2, o.h - 2);
-          ctx.fillStyle = "rgba(255,255,255,0.08)";
-          ctx.fillRect(o.x + 10, o.y + 10, o.w - 20, 16);
-        } else if (o.type === "caveWall") {
-          const wall = ctx.createLinearGradient(o.x, o.y, o.x + o.w, o.y + o.h);
-          wall.addColorStop(0, "#403130");
-          wall.addColorStop(1, "#1f1716");
-          ctx.fillStyle = wall;
-          ctx.fillRect(o.x, o.y, o.w, o.h);
-          ctx.strokeStyle = "rgba(255,255,255,0.08)";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(o.x + 2, o.y + 2, o.w - 4, o.h - 4);
-        } else {
-          const rock = ctx.createLinearGradient(o.x, o.y, o.x + o.w, o.y + o.h);
-          rock.addColorStop(0, shadeColor(currentLevel.obstacleColor, 20));
-          rock.addColorStop(0.5, currentLevel.obstacleColor);
-          rock.addColorStop(1, shadeColor(currentLevel.obstacleColor, -28));
-          ctx.fillStyle = rock;
-          ctx.fillRect(o.x, o.y, o.w, o.h);
-          ctx.strokeStyle = "rgba(0,0,0,0.35)";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(o.x + 1, o.y + 1, o.w - 2, o.h - 2);
+        ctx.strokeStyle = "rgba(40,20,0,0.35)";
+        for (let x = b.x + 8; x < b.x + b.w; x += 20) {
+          ctx.beginPath();
+          ctx.moveTo(x, b.y);
+          ctx.lineTo(x, b.y + b.h);
+          ctx.stroke();
         }
       }
     }
 
     function drawStoreZone() {
-      const s = currentLevel.storeZone;
-      ctx.fillStyle = "rgba(45, 135, 255, 0.11)";
-      ctx.fillRect(s.x, s.y, s.w, s.h);
-      ctx.strokeStyle = "rgba(65, 165, 255, 0.45)";
+      const z = currentLevel.storeZone;
+      ctx.fillStyle = "rgba(100, 180, 255, 0.12)";
+      ctx.fillRect(z.x, z.y, z.w, z.h);
+      ctx.strokeStyle = "rgba(120, 200, 255, 0.55)";
       ctx.lineWidth = 3;
-      ctx.strokeRect(s.x, s.y, s.w, s.h);
+      ctx.strokeRect(z.x, z.y, z.w, z.h);
 
-      ctx.fillStyle = "rgba(40,25,15,0.82)";
-      ctx.fillRect(s.x + 10, s.y + 20, s.w - 20, s.h - 40);
-
-      ctx.fillStyle = "rgba(240,190,120,0.35)";
-      ctx.fillRect(s.x + 20, s.y + 70, s.w - 40, 100);
-
-      ctx.font = "bold 16px Arial";
+      ctx.fillStyle = "#dfefff";
+      ctx.font = "bold 18px Arial";
       ctx.textAlign = "center";
-      ctx.fillStyle = "#ffd58f";
-      ctx.fillText("SHOP", s.x + s.w / 2, s.y + 55);
+      ctx.fillText("STORE", z.x + z.w / 2, z.y - 10);
 
       const k = currentLevel.shopKeeper;
       ctx.beginPath();
-      ctx.arc(k.x, k.y, 15, 0, Math.PI * 2);
-      ctx.fillStyle = "#f6b46d";
+      ctx.arc(k.x, k.y, 14, 0, Math.PI * 2);
+      ctx.fillStyle = "#f4d5a1";
       ctx.fill();
 
-      ctx.fillStyle = "#663b22";
-      ctx.fillRect(k.x - 10, k.y + 12, 20, 18);
+      ctx.fillStyle = "#35495e";
+      ctx.fillRect(k.x - 12, k.y + 10, 24, 22);
     }
 
     function drawPortal() {
       const p = currentLevel.portal;
-      const pulse = 1 + Math.sin(frameCount * 0.1) * 0.08;
+      const pulse = Math.sin(frameCount * 0.08) * 3;
 
-      ctx.save();
-      ctx.translate(p.x, p.y);
-
-      const aura = ctx.createRadialGradient(0, 0, p.radius * 0.5, 0, 0, p.radius * 2.4);
-      aura.addColorStop(0, p.open ? "rgba(90,220,255,0.3)" : "rgba(80,80,80,0.22)");
-      aura.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = aura;
       ctx.beginPath();
-      ctx.arc(0, 0, p.radius * 2.4, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.radius + 10 + pulse, 0, Math.PI * 2);
+      ctx.fillStyle = p.open ? "rgba(140, 255, 180, 0.25)" : "rgba(180, 180, 200, 0.14)";
       ctx.fill();
 
-      for (let i = 0; i < 3; i++) {
-        const ringR = (p.radius + 8 + i * 10) * (p.open ? pulse : 1);
-        ctx.beginPath();
-        ctx.arc(0, 0, ringR, 0, Math.PI * 2);
-        ctx.strokeStyle = p.open ? `rgba(120,230,255,${0.38 - i * 0.1})` : `rgba(110,110,110,${0.26 - i * 0.05})`;
-        ctx.lineWidth = 4 - i;
-        ctx.stroke();
-      }
-
-      const core = ctx.createRadialGradient(-8, -10, 4, 0, 0, p.radius);
-      if (p.open) {
-        core.addColorStop(0, "rgba(225,255,255,0.96)");
-        core.addColorStop(0.45, "rgba(102,227,255,0.92)");
-        core.addColorStop(1, "rgba(45,96,150,0.9)");
-      } else {
-        core.addColorStop(0, "rgba(120,120,120,0.8)");
-        core.addColorStop(1, "rgba(50,50,50,0.94)");
-      }
-      ctx.fillStyle = core;
       ctx.beginPath();
-      ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.radius + pulse, 0, Math.PI * 2);
+      ctx.fillStyle = p.open ? "#7affb7" : "#8a8fa2";
       ctx.fill();
 
-      if (p.open) {
-        for (let i = 0; i < 10; i++) {
-          const a = frameCount * 0.05 + i * (Math.PI * 2 / 10);
-          const pr = p.radius + 14 + Math.sin(frameCount * 0.08 + i) * 6;
-          ctx.fillStyle = "rgba(170,245,255,0.7)";
-          ctx.beginPath();
-          ctx.arc(Math.cos(a) * pr, Math.sin(a) * pr, 2.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius - 13, 0, Math.PI * 2);
+      ctx.fillStyle = p.open ? "#1f6f4f" : "#4a4d5e";
+      ctx.fill();
     }
 
     function drawPlayer() {
-      const glow = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius * 2.6);
-      glow.addColorStop(0, player.classType === "sword" ? "rgba(74,178,255,0.22)" : "rgba(255,210,79,0.22)");
-      glow.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, player.radius * 2.6, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-      ctx.fillStyle = player.color;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, player.range, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.06)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-
-    function drawCampMarkers() {
-      const camps = new Map();
-      for (const enemy of enemies) {
-        const key = enemy.campX + ":" + enemy.campY;
-        if (!camps.has(key)) {
-          camps.set(key, { x: enemy.campX, y: enemy.campY, r: enemy.campRadius });
-        }
-      }
-
-      for (const c of camps.values()) {
+      ctx.save();
+      if (player.classType === "sword") {
         ctx.beginPath();
-        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(255,120,90,0.18)";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.fillStyle = "rgba(255,120,90,0.08)";
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.arc(player.x, player.y, player.radius + 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#59c4ff";
         ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(player.x - 6, player.y - 4, 2, 0, Math.PI * 2);
+        ctx.arc(player.x + 6, player.y - 4, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+
+        ctx.strokeStyle = "#cfefff";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(player.x + 8, player.y + 5);
+        ctx.lineTo(player.x + 16, player.y + 16);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius + 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffd65c";
+        ctx.fill();
+
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(player.x - 5, player.y - 4, 2, 0, Math.PI * 2);
+        ctx.arc(player.x + 5, player.y - 4, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#334";
+        ctx.fillRect(player.x + 10, player.y - 3, 10, 6);
       }
+      ctx.restore();
     }
 
     function drawEnemies() {
       for (const enemy of enemies) {
-        const aggroColor = enemy.aggro ? "#ff6b57" : "#d98a7c";
-        const baseColor = enemy.hitFlash > 0 ? "#fff" : aggroColor;
+        if (enemy.hp <= 0) continue;
+
+        const baseColor = enemy.hitFlash > 0 ? "#fff" : "#d96c5f";
 
         ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y + 4, enemy.radius + 8, 0, Math.PI * 2);
+        ctx.arc(enemy.x, enemy.y, enemy.radius + 2, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(0,0,0,0.2)";
         ctx.fill();
 
