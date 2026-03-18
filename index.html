@@ -172,10 +172,72 @@
       margin-bottom: 0;
       flex-shrink: 0;
     }
+
+    #editorPanel {
+      position: fixed;
+      right: 10px;
+      bottom: 10px;
+      z-index: 30;
+      width: min(420px, calc(100vw - 20px));
+      background: rgba(16, 16, 16, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 10px;
+      pointer-events: auto;
+    }
+
+    #editorPanel.hidden {
+      display: none;
+    }
+
+    .editor-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .editor-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .editor-tool {
+      background: #3e3e3e;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .editor-tool.active {
+      background: #2d7ef7;
+    }
+
+    .editor-input {
+      width: 100%;
+      min-height: 120px;
+      background: #111;
+      color: #dff;
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      resize: vertical;
+    }
+
+    #editorToggle {
+      position: fixed;
+      right: 10px;
+      top: 10px;
+      z-index: 31;
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
+
+  <button id="editorToggle" class="secondary">Editor: OFF</button>
 
   <div id="hud">
     <div class="hud-box">
@@ -254,6 +316,22 @@
     </div>
   </div>
 
+  <div id="editorPanel" class="hidden">
+    <div class="editor-row">
+      <button id="toolWall" class="editor-tool">wall</button>
+      <button id="toolBridge" class="editor-tool">bridge</button>
+      <button id="toolCamp" class="editor-tool">camp</button>
+      <button id="toolPortal" class="editor-tool">portal</button>
+      <button id="toolPlayerStart" class="editor-tool">playerStart</button>
+      <button id="toolDecoration" class="editor-tool">decoration</button>
+    </div>
+    <div class="editor-row">
+      <button id="editorDelete" class="secondary">Delete Selected</button>
+      <button id="editorExport" class="secondary">Export Level</button>
+    </div>
+    <textarea id="editorOutput" class="editor-input" placeholder="Exported level data appears here"></textarea>
+  </div>
+
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -268,6 +346,20 @@
     const continueBtn = document.getElementById("continueBtn");
     const restartBtn = document.getElementById("restartBtn");
     const playAgainBtn = document.getElementById("playAgainBtn");
+    const editorToggle = document.getElementById("editorToggle");
+    const editorPanel = document.getElementById("editorPanel");
+    const editorOutput = document.getElementById("editorOutput");
+    const editorDelete = document.getElementById("editorDelete");
+    const editorExport = document.getElementById("editorExport");
+
+    const editorTools = {
+      wall: document.getElementById("toolWall"),
+      bridge: document.getElementById("toolBridge"),
+      camp: document.getElementById("toolCamp"),
+      portal: document.getElementById("toolPortal"),
+      playerStart: document.getElementById("toolPlayerStart"),
+      decoration: document.getElementById("toolDecoration")
+    };
 
     const classText = document.getElementById("classText");
     const levelText = document.getElementById("levelText");
@@ -296,6 +388,9 @@
     const keys = {};
     window.addEventListener("keydown", e => {
       keys[e.key.toLowerCase()] = true;
+      if (editorMode && (e.key === "Delete" || e.key === "Backspace")) {
+        deleteSelectedEditorObject();
+      }
     });
     window.addEventListener("keyup", e => {
       keys[e.key.toLowerCase()] = false;
@@ -375,9 +470,82 @@
     let attackTimer = 0;
     let camera = { x: 0, y: 0 };
     let terrainTexture = null;
+    let editorMode = false;
+    let activeEditorTool = "wall";
+    let selectedEditorObject = null;
 
-    const levels = [
+    function buildDefaultWalls(width, height, includeFarSection = false) {
+      const walls = [
+        { x: 260, y: 0, w: 280, h: 520, type: "rock" },
+        { x: 260, y: height - 520, w: 280, h: 520, type: "rock" },
+        { x: 760, y: 0, w: 240, h: 420, type: "rock" },
+        { x: 760, y: height - 520, w: 240, h: 520, type: "rock" },
+        { x: 1240, y: 220, w: 260, h: 540, type: "rock" },
+        { x: 1240, y: 980, w: 260, h: 560, type: "rock" },
+        { x: 1760, y: 0, w: 240, h: 460, type: "caveWall" },
+        { x: 1760, y: height - 620, w: 240, h: 620, type: "caveWall" },
+        { x: 2280, y: 240, w: 280, h: 520, type: "rock" },
+        { x: 2280, y: 980, w: 280, h: 620, type: "rock" },
+        { x: 2860, y: 0, w: 220, h: 400, type: "caveWall" },
+        { x: 2860, y: height - 700, w: 220, h: 700, type: "caveWall" },
+        { x: 3340, y: 180, w: 260, h: 500, type: "rock" },
+        { x: 3340, y: 1010, w: 260, h: 520, type: "rock" },
+        { x: 580, y: 760, w: 140, h: 140, type: "pillar" },
+        { x: 1540, y: 760, w: 160, h: 160, type: "pillar" },
+        { x: 2580, y: 770, w: 150, h: 150, type: "pillar" },
+        { x: 3660, y: 740, w: 170, h: 170, type: "pillar" },
+        { x: 980, y: 720, w: 130, h: 220, type: "slime" },
+        { x: 2040, y: 710, w: 140, h: 240, type: "slime" },
+        { x: 3140, y: 700, w: 130, h: 240, type: "slime" }
+      ];
+
+      if (includeFarSection) {
+        walls.push(
+          { x: 4120, y: 220, w: 220, h: 510, type: "rock" },
+          { x: 4120, y: 1030, w: 220, h: 540, type: "rock" },
+          { x: 4440, y: 770, w: 140, h: 140, type: "pillar" },
+          { x: 3900, y: 720, w: 120, h: 220, type: "slime" }
+        );
+      }
+
+      return walls;
+    }
+
+    function buildDefaultBridges(includeFarSection = false) {
+      const bridges = [
+        { x: 966, y: 806, w: 158, h: 48, type: "bridge" },
+        { x: 2026, y: 806, w: 168, h: 48, type: "bridge" },
+        { x: 3126, y: 796, w: 158, h: 48, type: "bridge" }
+      ];
+
+      if (includeFarSection) {
+        bridges.push({ x: 3886, y: 806, w: 148, h: 48, type: "bridge" });
+      }
+
+      return bridges;
+    }
+
+    function buildLaneCampDefs(width, height, enemyCount) {
+      const camps = [];
+      const laneY = height / 2;
+      let x = 520;
+      let enemiesLeft = enemyCount;
+      let i = 0;
+
+      while (x < width - 360 && enemiesLeft > 0) {
+        const count = Math.min(3 + (i % 3), enemiesLeft);
+        camps.push({ x, y: laneY, count, radius: 170 + (i % 3) * 15 });
+        enemiesLeft -= count;
+        x += 280;
+        i++;
+      }
+
+      return camps;
+    }
+
+    const LEVELS = [
       {
+        id: 1,
         name: "Green Mire",
         bg: "#59743b",
         ground2: "#6f8f49",
@@ -385,8 +553,14 @@
         obstacleColor: "#41552d",
         slimeColor: "#89d15b",
         bridgeColor: "#8f6a3b",
-        mapW: 3900,
-        mapH: 1750,
+        width: 3900,
+        height: 1750,
+        playerStart: { x: 120, y: 875 },
+        portal: { x: 3760, y: 875, radius: 40 },
+        walls: buildDefaultWalls(3900, 1750, false),
+        bridges: buildDefaultBridges(false),
+        camps: buildLaneCampDefs(3900, 1750, 28),
+        decorations: { type: "default", count: 160 },
         enemyHp: 44,
         enemyDamage: 12,
         enemySpeed: 1.25,
@@ -394,6 +568,7 @@
         moneyDrop: [8, 13]
       },
       {
+        id: 2,
         name: "Crimson Flats",
         bg: "#7b433d",
         ground2: "#9a5c53",
@@ -401,8 +576,51 @@
         obstacleColor: "#5c2a25",
         slimeColor: "#f1b16f",
         bridgeColor: "#a06e45",
-        mapW: 4250,
-        mapH: 1820,
+        width: 4250,
+        height: 1820,
+        playerStart: { x: 120, y: 910 },
+        portal: { x: 4110, y: 910, radius: 40 },
+        walls: [
+          { x: 0, y: 0, w: 640, h: 430, type: "rock" },
+          { x: 0, y: 1390, w: 640, h: 430, type: "rock" },
+          { x: 560, y: 0, w: 270, h: 320, type: "rock" },
+          { x: 560, y: 1500, w: 270, h: 320, type: "rock" },
+          { x: 900, y: 0, w: 260, h: 730, type: "caveWall" },
+          { x: 900, y: 1140, w: 260, h: 680, type: "caveWall" },
+          { x: 1320, y: 260, w: 240, h: 250, type: "rock" },
+          { x: 1460, y: 1080, w: 280, h: 270, type: "rock" },
+          { x: 1700, y: 420, w: 180, h: 220, type: "pillar" },
+          { x: 1850, y: 1060, w: 220, h: 250, type: "rock" },
+          { x: 2190, y: 0, w: 210, h: 640, type: "caveWall" },
+          { x: 2190, y: 1170, w: 210, h: 650, type: "caveWall" },
+          { x: 2300, y: 700, w: 230, h: 420, type: "slime" },
+          { x: 2640, y: 260, w: 220, h: 240, type: "rock" },
+          { x: 2800, y: 1080, w: 240, h: 260, type: "rock" },
+          { x: 3000, y: 460, w: 170, h: 200, type: "pillar" },
+          { x: 3300, y: 0, w: 280, h: 700, type: "caveWall" },
+          { x: 3300, y: 1140, w: 280, h: 680, type: "caveWall" },
+          { x: 3560, y: 250, w: 210, h: 220, type: "rock" },
+          { x: 3560, y: 1160, w: 210, h: 220, type: "rock" },
+          { x: 3920, y: 0, w: 330, h: 660, type: "caveWall" },
+          { x: 3920, y: 1080, w: 330, h: 740, type: "caveWall" }
+        ],
+        bridges: [
+          { x: 2260, y: 760, w: 320, h: 64, type: "bridge" }
+        ],
+        camps: [
+          { x: 760, y: 910, count: 4, radius: 170 },
+          { x: 1680, y: 930, count: 5, radius: 190 },
+          { x: 2890, y: 900, count: 5, radius: 185 },
+          { x: 3740, y: 905, count: 6, radius: 220 }
+        ],
+        decorations: {
+          type: "crimson",
+          count: 210,
+          ruins: [
+            [690, 770], [760, 1030], [1550, 730], [1770, 1110],
+            [2710, 760], [3020, 1030], [3600, 760], [3820, 1030]
+          ]
+        },
         enemyHp: 62,
         enemyDamage: 16,
         enemySpeed: 1.35,
@@ -410,6 +628,7 @@
         moneyDrop: [10, 15]
       },
       {
+        id: 3,
         name: "Blue Fungal Basin",
         bg: "#34546c",
         ground2: "#467391",
@@ -417,8 +636,14 @@
         obstacleColor: "#203949",
         slimeColor: "#9de5ff",
         bridgeColor: "#8a7044",
-        mapW: 4550,
-        mapH: 1920,
+        width: 4550,
+        height: 1920,
+        playerStart: { x: 120, y: 960 },
+        portal: { x: 4410, y: 960, radius: 40 },
+        walls: buildDefaultWalls(4550, 1920, true),
+        bridges: buildDefaultBridges(true),
+        camps: buildLaneCampDefs(4550, 1920, 36),
+        decorations: { type: "default", count: 160 },
         enemyHp: 86,
         enemyDamage: 20,
         enemySpeed: 1.45,
@@ -426,6 +651,7 @@
         moneyDrop: [12, 18]
       },
       {
+        id: 4,
         name: "Ash Stone Valley",
         bg: "#59555b",
         ground2: "#706b73",
@@ -433,8 +659,14 @@
         obstacleColor: "#363238",
         slimeColor: "#d8c86a",
         bridgeColor: "#9a7650",
-        mapW: 4850,
-        mapH: 2020,
+        width: 4850,
+        height: 2020,
+        playerStart: { x: 120, y: 1010 },
+        portal: { x: 4710, y: 1010, radius: 40 },
+        walls: buildDefaultWalls(4850, 2020, true),
+        bridges: buildDefaultBridges(true),
+        camps: buildLaneCampDefs(4850, 2020, 40),
+        decorations: { type: "default", count: 160 },
         enemyHp: 118,
         enemyDamage: 24,
         enemySpeed: 1.58,
@@ -442,6 +674,7 @@
         moneyDrop: [15, 22]
       },
       {
+        id: 5,
         name: "Void Bloom Ridge",
         bg: "#4e3265",
         ground2: "#664481",
@@ -449,8 +682,14 @@
         obstacleColor: "#311d42",
         slimeColor: "#ff89ff",
         bridgeColor: "#9f7b58",
-        mapW: 5300,
-        mapH: 2120,
+        width: 5300,
+        height: 2120,
+        playerStart: { x: 120, y: 1060 },
+        portal: { x: 5160, y: 1060, radius: 40 },
+        walls: buildDefaultWalls(5300, 2120, true),
+        bridges: buildDefaultBridges(true),
+        camps: buildLaneCampDefs(5300, 2120, 44),
+        decorations: { type: "default", count: 160 },
         enemyHp: 160,
         enemyDamage: 30,
         enemySpeed: 1.72,
@@ -511,178 +750,33 @@
     });
 
     function buildObstacles(spec) {
-      if (spec.name === "Crimson Flats") {
-        return [
-          { x: 0, y: 0, w: 640, h: 430, type: "rock" },
-          { x: 0, y: spec.mapH - 430, w: 640, h: 430, type: "rock" },
-          { x: 560, y: 0, w: 270, h: 320, type: "rock" },
-          { x: 560, y: spec.mapH - 320, w: 270, h: 320, type: "rock" },
-
-          { x: 900, y: 0, w: 260, h: 730, type: "caveWall" },
-          { x: 900, y: 1140, w: 260, h: 680, type: "caveWall" },
-
-          { x: 1320, y: 260, w: 240, h: 250, type: "rock" },
-          { x: 1460, y: 1080, w: 280, h: 270, type: "rock" },
-          { x: 1700, y: 420, w: 180, h: 220, type: "pillar" },
-          { x: 1850, y: 1060, w: 220, h: 250, type: "rock" },
-
-          { x: 2190, y: 0, w: 210, h: 640, type: "caveWall" },
-          { x: 2190, y: 1170, w: 210, h: 650, type: "caveWall" },
-          { x: 2300, y: 700, w: 230, h: 420, type: "slime" },
-
-          { x: 2640, y: 260, w: 220, h: 240, type: "rock" },
-          { x: 2800, y: 1080, w: 240, h: 260, type: "rock" },
-          { x: 3000, y: 460, w: 170, h: 200, type: "pillar" },
-
-          { x: 3300, y: 0, w: 280, h: 700, type: "caveWall" },
-          { x: 3300, y: 1140, w: 280, h: 680, type: "caveWall" },
-          { x: 3560, y: 250, w: 210, h: 220, type: "rock" },
-          { x: 3560, y: 1160, w: 210, h: 220, type: "rock" },
-
-          { x: 3920, y: 0, w: 330, h: 660, type: "caveWall" },
-          { x: 3920, y: 1080, w: 330, h: 740, type: "caveWall" }
-        ];
-      }
-
-      const obs = [];
-
-      obs.push({ x: 260, y: 0, w: 280, h: 520, type: "rock" });
-      obs.push({ x: 260, y: spec.mapH - 520, w: 280, h: 520, type: "rock" });
-
-      obs.push({ x: 760, y: 0, w: 240, h: 420, type: "rock" });
-      obs.push({ x: 760, y: spec.mapH - 520, w: 240, h: 520, type: "rock" });
-
-      obs.push({ x: 1240, y: 220, w: 260, h: 540, type: "rock" });
-      obs.push({ x: 1240, y: 980, w: 260, h: 560, type: "rock" });
-
-      obs.push({ x: 1760, y: 0, w: 240, h: 460, type: "caveWall" });
-      obs.push({ x: 1760, y: spec.mapH - 620, w: 240, h: 620, type: "caveWall" });
-
-      obs.push({ x: 2280, y: 240, w: 280, h: 520, type: "rock" });
-      obs.push({ x: 2280, y: 980, w: 280, h: 620, type: "rock" });
-
-      obs.push({ x: 2860, y: 0, w: 220, h: 400, type: "caveWall" });
-      obs.push({ x: 2860, y: spec.mapH - 700, w: 220, h: 700, type: "caveWall" });
-
-      obs.push({ x: 3340, y: 180, w: 260, h: 500, type: "rock" });
-      obs.push({ x: 3340, y: 1010, w: 260, h: 520, type: "rock" });
-
-      obs.push({ x: 580, y: 760, w: 140, h: 140, type: "pillar" });
-      obs.push({ x: 1540, y: 760, w: 160, h: 160, type: "pillar" });
-      obs.push({ x: 2580, y: 770, w: 150, h: 150, type: "pillar" });
-      obs.push({ x: 3660, y: 740, w: 170, h: 170, type: "pillar" });
-
-      obs.push({ x: 980, y: 720, w: 130, h: 220, type: "slime" });
-      obs.push({ x: 2040, y: 710, w: 140, h: 240, type: "slime" });
-      obs.push({ x: 3140, y: 700, w: 130, h: 240, type: "slime" });
-
-      if (spec.mapW > 4200) {
-        obs.push({ x: 4120, y: 220, w: 220, h: 510, type: "rock" });
-        obs.push({ x: 4120, y: 1030, w: 220, h: 540, type: "rock" });
-        obs.push({ x: 4440, y: 770, w: 140, h: 140, type: "pillar" });
-        obs.push({ x: 3900, y: 720, w: 120, h: 220, type: "slime" });
-      }
-
-      return obs;
+      return structuredClone(spec.walls || []);
     }
 
     function buildBridges(spec) {
-      if (spec.name === "Crimson Flats") {
-        return [
-          { x: 2260, y: 760, w: 320, h: 64, type: "bridge" }
-        ];
-      }
-
-      const bridges = [];
-      const slimeRects = [
-        { x: 980, y: 720, w: 130, h: 220 },
-        { x: 2040, y: 710, w: 140, h: 240 },
-        { x: 3140, y: 700, w: 130, h: 240 }
-      ];
-
-      if (spec.mapW > 4200) {
-        slimeRects.push({ x: 3900, y: 720, w: 120, h: 220 });
-      }
-
-      for (const s of slimeRects) {
-        bridges.push({
-          x: s.x - 14,
-          y: s.y + s.h / 2 - 24,
-          w: s.w + 28,
-          h: 48,
-          type: "bridge"
-        });
-      }
-      return bridges;
+      return structuredClone(spec.bridges || []);
     }
 
     function buildEnemyCamps(spec) {
-      if (spec.name === "Crimson Flats") {
-        const camps = [];
-        const campDefs = [
-          { x: 760, y: 910, count: 4, radius: 170 },
-          { x: 1680, y: 930, count: 5, radius: 190 },
-          { x: 2890, y: 900, count: 5, radius: 185 },
-          { x: 3740, y: 905, count: 6, radius: 220 }
-        ];
-
-        for (const camp of campDefs) {
-          for (let i = 0; i < camp.count; i++) {
-            const ox = rand(-65, 65);
-            const oy = rand(-115, 115);
-            camps.push({
-              x: camp.x + ox,
-              y: camp.y + oy,
-              homeX: camp.x + ox,
-              homeY: camp.y + oy,
-              campX: camp.x,
-              campY: camp.y,
-              campRadius: camp.radius,
-              radius: 16,
-              size: 26,
-              hp: spec.enemyHp,
-              maxHp: spec.enemyHp,
-              speed: spec.enemySpeed,
-              damage: spec.enemyDamage,
-              aggro: false,
-              aggroRange: 230,
-              leashRange: 360,
-              money: Math.floor(rand(spec.moneyDrop[0], spec.moneyDrop[1] + 1)),
-              hitFlash: 0
-            });
-          }
-        }
-
-        return camps;
-      }
-
       const camps = [];
-      const laneY = spec.mapH / 2;
-      const campPositions = [];
-      let x = 520;
-
-      while (x < spec.mapW - 360) {
-        campPositions.push(x);
-        x += 280;
-      }
-
-      let enemiesLeft = spec.enemyCount;
-
-      for (let i = 0; i < campPositions.length && enemiesLeft > 0; i++) {
-        const campX = campPositions[i];
-        const count = Math.min(3 + (i % 3), enemiesLeft);
-        const campRadius = 170 + (i % 3) * 15;
+      for (const camp of (spec.camps || [])) {
+        const spreadX = spec.id === 2 ? 65 : 70;
+        const spreadY = spec.id === 2 ? 115 : 170;
+        const campX = camp.x;
+        const campY = camp.y;
+        const count = camp.count;
+        const campRadius = camp.radius;
 
         for (let j = 0; j < count; j++) {
-          const ox = rand(-70, 70);
-          const oy = rand(-170, 170);
+          const ox = rand(-spreadX, spreadX);
+          const oy = rand(-spreadY, spreadY);
           camps.push({
             x: campX + ox,
-            y: laneY + oy,
+            y: campY + oy,
             homeX: campX + ox,
-            homeY: laneY + oy,
+            homeY: campY + oy,
             campX,
-            campY: laneY,
+            campY,
             campRadius,
             radius: 16,
             size: 26,
@@ -697,8 +791,6 @@
             hitFlash: 0
           });
         }
-
-        enemiesLeft -= count;
       }
 
       return camps;
@@ -727,9 +819,14 @@
 
     function buildDecor(spec) {
       const arr = [];
+      const decorSpec = spec.decorations || { type: "default", count: 160 };
 
-      if (spec.name === "Crimson Flats") {
-        for (let i = 0; i < 210; i++) {
+      if (Array.isArray(decorSpec.items)) {
+        return structuredClone(decorSpec.items);
+      }
+
+      if (decorSpec.type === "crimson") {
+        for (let i = 0; i < decorSpec.count; i++) {
           arr.push({
             kind: i % 5 === 0 ? "plant" : "stone",
             x: rand(40, spec.mapW - 40),
@@ -738,10 +835,7 @@
           });
         }
 
-        const ruins = [
-          [690, 770], [760, 1030], [1550, 730], [1770, 1110],
-          [2710, 760], [3020, 1030], [3600, 760], [3820, 1030]
-        ];
+        const ruins = decorSpec.ruins || [];
         for (const [x, y] of ruins) {
           arr.push({ kind: "ruin", x, y, r: rand(12, 20) });
         }
@@ -749,7 +843,7 @@
         return arr;
       }
 
-      for (let i = 0; i < 160; i++) {
+      for (let i = 0; i < decorSpec.count; i++) {
         arr.push({
           kind: i % 4 === 0 ? "plant" : "stone",
           x: rand(40, spec.mapW - 40),
@@ -807,12 +901,15 @@
 
     function loadLevel(index) {
       currentLevelIndex = index;
-      currentLevel = structuredClone(levels[index]);
+      currentLevel = structuredClone(LEVELS[index]);
+      currentLevel.mapW = currentLevel.width;
+      currentLevel.mapH = currentLevel.height;
       currentLevel.obstacles = buildObstacles(currentLevel);
       currentLevel.bridges = buildBridges(currentLevel);
-      currentLevel.portal = { x: currentLevel.mapW - 140, y: currentLevel.mapH / 2, radius: 40, open: false };
+      currentLevel.portal = { ...currentLevel.portal, open: false };
       currentLevel.storeZone = { x: currentLevel.mapW - 300, y: currentLevel.mapH / 2 - 140, w: 120, h: 280 };
       currentLevel.decor = buildDecor(currentLevel);
+      currentLevel.decorations.items = structuredClone(currentLevel.decor);
       terrainTexture = createTerrainTexture(currentLevel);
       currentLevel.shopKeeper = {
         x: currentLevel.storeZone.x + currentLevel.storeZone.w / 2,
@@ -826,8 +923,8 @@
       effects = [];
       damageTexts = [];
 
-      player.x = 120;
-      player.y = currentLevel.mapH / 2;
+      player.x = currentLevel.playerStart.x;
+      player.y = currentLevel.playerStart.y;
       player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.15));
 
       camera.x = 0;
@@ -839,6 +936,252 @@
 
       levelText.textContent = String(index + 1);
       areaText.textContent = currentLevel.name;
+      selectedEditorObject = null;
+      refreshEditorToolButtons();
+    }
+
+    function setEditorMode(next) {
+      editorMode = next;
+      editorToggle.textContent = `Editor: ${editorMode ? "ON" : "OFF"}`;
+      if (editorMode) editorPanel.classList.remove("hidden");
+      else editorPanel.classList.add("hidden");
+      selectedEditorObject = null;
+    }
+
+    function setEditorTool(tool) {
+      activeEditorTool = tool;
+      refreshEditorToolButtons();
+    }
+
+    function refreshEditorToolButtons() {
+      for (const [tool, btn] of Object.entries(editorTools)) {
+        btn.classList.toggle("active", tool === activeEditorTool);
+      }
+    }
+
+    function worldFromCanvasEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      return { x: screenX + camera.x, y: screenY + camera.y };
+    }
+
+    function getEditorObjectsByTool(tool) {
+      if (!currentLevel) return [];
+      if (tool === "wall") return currentLevel.walls;
+      if (tool === "bridge") return currentLevel.bridges;
+      if (tool === "camp") return currentLevel.camps;
+      if (tool === "decoration") return currentLevel.decorations.items;
+      return [];
+    }
+
+    function findObjectAtPoint(x, y, tool) {
+      if (!currentLevel) return null;
+
+      if (tool === "portal") {
+        return dist(x, y, currentLevel.portal.x, currentLevel.portal.y) <= currentLevel.portal.radius + 10
+          ? { tool, ref: currentLevel.portal }
+          : null;
+      }
+
+      if (tool === "playerStart") {
+        return dist(x, y, currentLevel.playerStart.x, currentLevel.playerStart.y) <= 18
+          ? { tool, ref: currentLevel.playerStart }
+          : null;
+      }
+
+      const arr = getEditorObjectsByTool(tool);
+      if (!arr) return null;
+
+      if (tool === "camp") {
+        for (const c of arr) {
+          if (dist(x, y, c.x, c.y) <= c.radius) return { tool, ref: c };
+        }
+        return null;
+      }
+
+      if (tool === "decoration") {
+        for (const d of arr) {
+          if (dist(x, y, d.x, d.y) <= Math.max(10, d.r || 10)) return { tool, ref: d };
+        }
+        return null;
+      }
+
+      for (const o of arr) {
+        if (x >= o.x && x <= o.x + o.w && y >= o.y && y <= o.y + o.h) {
+          return { tool, ref: o };
+        }
+      }
+      return null;
+    }
+
+    function placeEditorObject(x, y, tool) {
+      if (!currentLevel) return;
+      if (tool === "wall") {
+        const obj = { x: Math.round(x - 80), y: Math.round(y - 50), w: 160, h: 100, type: "rock" };
+        currentLevel.walls.push(obj);
+        currentLevel.obstacles = buildObstacles(currentLevel);
+        selectedEditorObject = { tool, ref: obj };
+        return;
+      }
+      if (tool === "bridge") {
+        const obj = { x: Math.round(x - 70), y: Math.round(y - 20), w: 140, h: 40, type: "bridge" };
+        currentLevel.bridges.push(obj);
+        selectedEditorObject = { tool, ref: obj };
+        return;
+      }
+      if (tool === "camp") {
+        const obj = { x: Math.round(x), y: Math.round(y), count: 4, radius: 180 };
+        currentLevel.camps.push(obj);
+        enemies = buildEnemyCamps(currentLevel);
+        selectedEditorObject = { tool, ref: obj };
+        return;
+      }
+      if (tool === "portal") {
+        currentLevel.portal.x = Math.round(x);
+        currentLevel.portal.y = Math.round(y);
+        selectedEditorObject = { tool, ref: currentLevel.portal };
+        return;
+      }
+      if (tool === "playerStart") {
+        currentLevel.playerStart.x = Math.round(x);
+        currentLevel.playerStart.y = Math.round(y);
+        selectedEditorObject = { tool, ref: currentLevel.playerStart };
+        return;
+      }
+      if (tool === "decoration") {
+        const obj = { kind: "stone", x: Math.round(x), y: Math.round(y), r: 14 };
+        currentLevel.decorations.items.push(obj);
+        currentLevel.decor.push(obj);
+        selectedEditorObject = { tool, ref: obj };
+      }
+    }
+
+    function deleteSelectedEditorObject() {
+      if (!selectedEditorObject || !currentLevel) return;
+      const { tool, ref } = selectedEditorObject;
+
+      if (tool === "portal" || tool === "playerStart") {
+        return;
+      }
+
+      const arr = getEditorObjectsByTool(tool);
+      const idx = arr.indexOf(ref);
+      if (idx !== -1) {
+        arr.splice(idx, 1);
+      }
+
+      if (tool === "wall") {
+        currentLevel.obstacles = buildObstacles(currentLevel);
+      }
+      if (tool === "camp") {
+        enemies = buildEnemyCamps(currentLevel);
+      }
+      if (tool === "decoration") {
+        currentLevel.decor = structuredClone(currentLevel.decorations.items);
+      }
+
+      selectedEditorObject = null;
+    }
+
+    function exportCurrentLevelData() {
+      if (!currentLevel) {
+        editorOutput.value = "";
+        return;
+      }
+
+      const exported = {
+        id: currentLevel.id,
+        name: currentLevel.name,
+        width: currentLevel.width,
+        height: currentLevel.height,
+        playerStart: currentLevel.playerStart,
+        portal: {
+          x: currentLevel.portal.x,
+          y: currentLevel.portal.y,
+          radius: currentLevel.portal.radius
+        },
+        walls: currentLevel.walls,
+        bridges: currentLevel.bridges,
+        camps: currentLevel.camps,
+        decorations: {
+          type: currentLevel.decorations.type,
+          count: currentLevel.decorations.items.length,
+          items: currentLevel.decorations.items
+        }
+      };
+
+      editorOutput.value = JSON.stringify(exported, null, 2);
+    }
+
+    canvas.addEventListener("click", e => {
+      if (!editorMode || !currentLevel || menu.classList.contains("hidden") === false) return;
+      if (!running && !pausedForStore) return;
+
+      const world = worldFromCanvasEvent(e);
+      const found = findObjectAtPoint(world.x, world.y, activeEditorTool);
+      if (found) {
+        selectedEditorObject = found;
+      } else {
+        placeEditorObject(world.x, world.y, activeEditorTool);
+      }
+    });
+
+    editorToggle.addEventListener("click", () => setEditorMode(!editorMode));
+    editorDelete.addEventListener("click", deleteSelectedEditorObject);
+    editorExport.addEventListener("click", exportCurrentLevelData);
+
+    for (const tool of Object.keys(editorTools)) {
+      editorTools[tool].addEventListener("click", () => setEditorTool(tool));
+    }
+
+    function drawEditorOverlay() {
+      if (!editorMode || !currentLevel) return;
+
+      ctx.save();
+      ctx.translate(-camera.x, -camera.y);
+
+      ctx.strokeStyle = "rgba(80,180,255,0.18)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= currentLevel.mapW; x += 80) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, currentLevel.mapH);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= currentLevel.mapH; y += 80) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(currentLevel.mapW, y);
+        ctx.stroke();
+      }
+
+      if (selectedEditorObject) {
+        const { tool, ref } = selectedEditorObject;
+        ctx.strokeStyle = "#00f0ff";
+        ctx.lineWidth = 4;
+
+        if (tool === "portal" || tool === "playerStart") {
+          ctx.beginPath();
+          ctx.arc(ref.x, ref.y, (tool === "portal" ? ref.radius : 12) + 8, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (tool === "camp") {
+          ctx.beginPath();
+          ctx.arc(ref.x, ref.y, ref.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ref.x, ref.y, 10, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (tool === "decoration") {
+          ctx.beginPath();
+          ctx.arc(ref.x, ref.y, Math.max(12, (ref.r || 8) + 6), 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(ref.x - 2, ref.y - 2, ref.w + 4, ref.h + 4);
+        }
+      }
+
+      ctx.restore();
     }
 
     function obstacleBlocksMovement(o, entity) {
@@ -1264,7 +1607,7 @@
       storeScreen.classList.add("hidden");
       pausedForStore = false;
 
-      if (currentLevelIndex >= levels.length - 1) {
+      if (currentLevelIndex >= LEVELS.length - 1) {
         winText.textContent = `You finished all 5 levels with $${player.money} left.`;
         winScreen.classList.remove("hidden");
         return;
@@ -1497,62 +1840,56 @@
           const rock = ctx.createLinearGradient(o.x, o.y, o.x + o.w, o.y + o.h);
           rock.addColorStop(0, shadeColor(currentLevel.obstacleColor, 20));
           rock.addColorStop(0.5, currentLevel.obstacleColor);
-          rock.addColorStop(1, shadeColor(currentLevel.obstacleColor, -26));
+          rock.addColorStop(1, shadeColor(currentLevel.obstacleColor, -28));
           ctx.fillStyle = rock;
           ctx.fillRect(o.x, o.y, o.w, o.h);
-          ctx.strokeStyle = "rgba(0,0,0,0.34)";
+          ctx.strokeStyle = "rgba(0,0,0,0.35)";
           ctx.lineWidth = 2;
           ctx.strokeRect(o.x + 1, o.y + 1, o.w - 2, o.h - 2);
-          ctx.fillStyle = "rgba(255,255,255,0.06)";
-          ctx.fillRect(o.x + 10, o.y + 10, o.w - 24, 18);
         }
       }
     }
 
     function drawStoreZone() {
-      ctx.fillStyle = "rgba(255,255,255,0.08)";
-      ctx.fillRect(currentLevel.storeZone.x, currentLevel.storeZone.y, currentLevel.storeZone.w, currentLevel.storeZone.h);
+      const s = currentLevel.storeZone;
+      ctx.fillStyle = "rgba(45, 135, 255, 0.11)";
+      ctx.fillRect(s.x, s.y, s.w, s.h);
+      ctx.strokeStyle = "rgba(65, 165, 255, 0.45)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(s.x, s.y, s.w, s.h);
 
-      ctx.fillStyle = "#d9b36a";
-      ctx.fillRect(currentLevel.storeZone.x + 10, currentLevel.storeZone.y + 20, currentLevel.storeZone.w - 20, currentLevel.storeZone.h - 40);
+      ctx.fillStyle = "rgba(40,25,15,0.82)";
+      ctx.fillRect(s.x + 10, s.y + 20, s.w - 20, s.h - 40);
 
-      ctx.fillStyle = "#4a2d12";
-      ctx.fillRect(currentLevel.storeZone.x + 20, currentLevel.storeZone.y + 70, currentLevel.storeZone.w - 40, 100);
+      ctx.fillStyle = "rgba(240,190,120,0.35)";
+      ctx.fillRect(s.x + 20, s.y + 70, s.w - 40, 100);
 
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 20px Arial";
+      ctx.font = "bold 16px Arial";
       ctx.textAlign = "center";
-      ctx.fillText("SHOP", currentLevel.storeZone.x + currentLevel.storeZone.w / 2, currentLevel.storeZone.y + 55);
+      ctx.fillStyle = "#ffd58f";
+      ctx.fillText("SHOP", s.x + s.w / 2, s.y + 55);
 
-      drawShopKeeper();
-    }
-
-    function drawShopKeeper() {
       const k = currentLevel.shopKeeper;
       ctx.beginPath();
-      ctx.arc(k.x, k.y - 18, 14, 0, Math.PI * 2);
-      ctx.fillStyle = "#c6e86f";
+      ctx.arc(k.x, k.y, 15, 0, Math.PI * 2);
+      ctx.fillStyle = "#f6b46d";
       ctx.fill();
 
-      ctx.fillStyle = "#5f3fd4";
-      ctx.fillRect(k.x - 16, k.y - 4, 32, 42);
-
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 12px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("SHOP KEEPER", k.x, k.y + 56);
+      ctx.fillStyle = "#663b22";
+      ctx.fillRect(k.x - 10, k.y + 12, 20, 18);
     }
 
     function drawPortal() {
       const p = currentLevel.portal;
-      const pulse = 1 + Math.sin(frameCount * 0.08) * 0.07;
+      const pulse = 1 + Math.sin(frameCount * 0.1) * 0.08;
+
       ctx.save();
       ctx.translate(p.x, p.y);
 
-      const outerGlow = ctx.createRadialGradient(0, 0, p.radius * 0.4, 0, 0, p.radius * 2.4);
-      outerGlow.addColorStop(0, p.open ? "rgba(130,240,255,0.2)" : "rgba(90,90,90,0.12)");
-      outerGlow.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = outerGlow;
+      const aura = ctx.createRadialGradient(0, 0, p.radius * 0.5, 0, 0, p.radius * 2.4);
+      aura.addColorStop(0, p.open ? "rgba(90,220,255,0.3)" : "rgba(80,80,80,0.22)");
+      aura.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = aura;
       ctx.beginPath();
       ctx.arc(0, 0, p.radius * 2.4, 0, Math.PI * 2);
       ctx.fill();
@@ -1813,6 +2150,7 @@
       drawEffects();
       drawDamageTexts();
       drawMiniHints();
+      drawEditorOverlay();
 
       ctx.restore();
     }
