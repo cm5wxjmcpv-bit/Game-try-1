@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alien Planet Fighter</title>
   <style>
     * { box-sizing: border-box; }
@@ -12,27 +12,16 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      overscroll-behavior: none;
       font-family: Arial, Helvetica, sans-serif;
       background: #111;
       color: #fff;
     }
 
-    body {
-      touch-action: none;
-      -webkit-text-size-adjust: 100%;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
     canvas {
       display: block;
       width: 100vw;
-      width: 100dvw;
       height: 100vh;
-      height: 100dvh;
       background: #111;
-      touch-action: none;
     }
 
     .overlay {
@@ -44,40 +33,24 @@
       justify-content: center;
       z-index: 50;
       padding: 20px;
-      overflow: hidden;
     }
 
-    .hidden { display: none !important; pointer-events: none !important; }
-
-    .overlay,
-    .panel,
-    #storeGrid,
-    #editorPanel,
-    #editorOutput {
-      max-width: 100%;
-    }
+    .hidden { display: none; }
 
     .panel {
       width: min(94vw, 840px);
-      width: min(94dvw, 840px);
-      max-height: calc(100vh - 40px);
-      max-height: calc(100dvh - 40px);
       background: rgba(24, 24, 24, 0.97);
       border: 2px solid #444;
       border-radius: 18px;
       padding: 24px;
       box-shadow: 0 14px 40px rgba(0,0,0,0.4);
       text-align: center;
-      overflow: auto;
-      overscroll-behavior: contain;
-      touch-action: pan-y;
     }
 
     #storeScreen .panel {
       display: flex;
       flex-direction: column;
       max-height: calc(100vh - 40px);
-      max-height: calc(100dvh - 40px);
     }
 
     h1, h2, h3, p {
@@ -100,7 +73,6 @@
     button {
       border: none;
       border-radius: 12px;
-      min-height: 42px;
       padding: 12px 18px;
       font-size: 15px;
       font-weight: 700;
@@ -207,17 +179,11 @@
       bottom: 10px;
       z-index: 30;
       width: min(420px, calc(100vw - 20px));
-      width: min(420px, calc(100dvw - 20px));
-      max-height: min(70vh, calc(100vh - 72px));
-      max-height: min(70dvh, calc(100dvh - 72px));
-      overflow: auto;
-      overscroll-behavior: contain;
       background: rgba(16, 16, 16, 0.92);
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 12px;
       padding: 10px;
       pointer-events: auto;
-      touch-action: pan-y;
     }
 
     #editorPanel.hidden {
@@ -266,224 +232,6 @@
       z-index: 31;
       pointer-events: auto;
     }
-
-    #touchControls {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 32;
-      display: none;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding: 10px;
-      padding-bottom: calc(10px + env(safe-area-inset-bottom));
-      pointer-events: none;
-    }
-
-    #touchMovePad,
-    #touchAttackBtn {
-      pointer-events: auto;
-    }
-
-    #touchMovePad {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.26);
-      background: rgba(0,0,0,0.35);
-      position: relative;
-      touch-action: none;
-    }
-
-    #touchMoveKnob {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 54px;
-      height: 54px;
-      margin-left: -27px;
-      margin-top: -27px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.28);
-      border: 2px solid rgba(255,255,255,0.45);
-    }
-
-    #touchAttackBtn {
-      min-height: 64px;
-      min-width: 92px;
-      border-radius: 999px;
-      background: rgba(200, 56, 56, 0.88);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-      font-size: 17px;
-      padding: 10px 18px;
-      touch-action: manipulation;
-    }
-
-    #touchAttackBtn:active {
-      transform: scale(0.98);
-      opacity: 1;
-    }
-
-    #touchControls.visible {
-      display: flex;
-    }
-
-    @media (max-width: 900px) {
-      .overlay {
-        padding: 12px;
-      }
-
-      .panel {
-        border-radius: 14px;
-        padding: 16px;
-      }
-
-      h1 {
-        font-size: clamp(26px, 7vw, 34px);
-      }
-
-      h2 {
-        font-size: clamp(22px, 6vw, 30px);
-      }
-
-      p {
-        font-size: clamp(14px, 3.5vw, 16px);
-      }
-
-      #hud {
-        top: 8px;
-        left: 8px;
-        right: 8px;
-        gap: 8px;
-      }
-
-      .hud-box {
-        min-width: 0;
-        flex: 1 1 210px;
-        padding: 9px 10px;
-        font-size: 14px;
-      }
-
-      .bar-wrap {
-        width: 100%;
-        max-width: 230px;
-      }
-
-      button {
-        min-height: 44px;
-        font-size: 16px;
-        padding: 12px 16px;
-      }
-
-      #editorToggle {
-        top: auto;
-        right: 8px;
-        bottom: 8px;
-      }
-
-      #editorPanel {
-        right: 8px;
-        bottom: 58px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .overlay {
-        align-items: stretch;
-      }
-
-      .panel {
-        width: 100%;
-        max-height: calc(100vh - 24px);
-        max-height: calc(100dvh - 24px);
-      }
-
-      .btn-row {
-        gap: 10px;
-      }
-
-      .btn-row button {
-        width: 100%;
-      }
-
-      #hud {
-        top: 6px;
-        gap: 6px;
-      }
-
-      .hud-box {
-        flex: 1 1 calc(50% - 4px);
-        min-width: 0;
-        padding: 7px 8px;
-        font-size: 12px;
-      }
-
-      .bar-wrap {
-        margin-top: 4px;
-        height: 12px;
-      }
-
-      #hud .hud-box:last-child {
-        flex-basis: 100%;
-      }
-
-      #editorToggle {
-        min-height: 34px;
-        padding: 6px 10px;
-        font-size: 12px;
-      }
-
-      #editorPanel {
-        width: calc(100vw - 16px);
-        width: calc(100dvw - 16px);
-        max-height: min(46vh, calc(100vh - 120px));
-        max-height: min(46dvh, calc(100dvh - 120px));
-        padding: 8px;
-        font-size: 12px;
-      }
-
-      .editor-tool {
-        padding: 6px 8px;
-        font-size: 12px;
-      }
-
-      .editor-input {
-        min-height: 88px;
-      }
-
-      #storeScreen .store-top {
-        align-items: flex-start;
-      }
-
-      #storeScreen .store-top > div:last-child {
-        font-size: 18px !important;
-      }
-
-      #touchControls {
-        padding: 8px;
-        padding-bottom: calc(8px + env(safe-area-inset-bottom));
-      }
-
-      #touchMovePad {
-        width: 108px;
-        height: 108px;
-      }
-
-      #touchMoveKnob {
-        width: 50px;
-        height: 50px;
-        margin-left: -25px;
-        margin-top: -25px;
-      }
-
-      #touchAttackBtn {
-        min-height: 56px;
-        min-width: 82px;
-        font-size: 15px;
-      }
-    }
-
   </style>
 </head>
 <body>
@@ -588,13 +336,6 @@
     <textarea id="editorOutput" class="editor-input" placeholder="Exported level data appears here"></textarea>
   </div>
 
-  <div id="touchControls" aria-hidden="true">
-    <div id="touchMovePad">
-      <div id="touchMoveKnob"></div>
-    </div>
-    <button id="touchAttackBtn" type="button">Attack</button>
-  </div>
-
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -615,10 +356,6 @@
     const editorDelete = document.getElementById("editorDelete");
     const editorExport = document.getElementById("editorExport");
     const editorLevelSelect = document.getElementById("editorLevelSelect");
-    const touchControls = document.getElementById("touchControls");
-    const touchMovePad = document.getElementById("touchMovePad");
-    const touchMoveKnob = document.getElementById("touchMoveKnob");
-    const touchAttackBtn = document.getElementById("touchAttackBtn");
 
     const editorTools = {
       wall: document.getElementById("toolWall"),
@@ -647,16 +384,11 @@
     const winText = document.getElementById("winText");
 
     function resizeCanvas() {
-      const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
-      const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      canvas.width = Math.max(1, Math.floor(viewportWidth));
-      canvas.height = Math.max(1, Math.floor(viewportHeight));
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     }
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", resizeCanvas);
-    }
 
     const keys = {};
     window.addEventListener("keydown", e => {
@@ -683,49 +415,46 @@
       const r = clamp(((n >> 16) & 255) + amount, 0, 255);
       const g = clamp(((n >> 8) & 255) + amount, 0, 255);
       const b = clamp((n & 255) + amount, 0, 255);
-      return `rgb(${r},${g},${b})`;
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
     function dist(ax, ay, bx, by) {
-      const dx = ax - bx;
-      const dy = ay - by;
-      return Math.hypot(dx, dy);
+      return Math.hypot(ax - bx, ay - by);
     }
 
-    function randomBetween(a, b) {
-      return a + Math.random() * (b - a);
+    function circleRectCollision(cx, cy, radius, rect) {
+      const closestX = clamp(cx, rect.x, rect.x + rect.w);
+      const closestY = clamp(cy, rect.y, rect.y + rect.h);
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return (dx * dx + dy * dy) < (radius * radius);
     }
 
-    function circleRectOverlap(cx, cy, r, rx, ry, rw, rh) {
-      const nearestX = clamp(cx, rx, rx + rw);
-      const nearestY = clamp(cy, ry, ry + rh);
-      const dx = cx - nearestX;
-      const dy = cy - nearestY;
-      return dx * dx + dy * dy < r * r;
-    }
+    function resolveCircleRectCollision(entity, rect) {
+      const closestX = clamp(entity.x, rect.x, rect.x + rect.w);
+      const closestY = clamp(entity.y, rect.y, rect.y + rect.h);
+      let dx = entity.x - closestX;
+      let dy = entity.y - closestY;
+      let d2 = dx * dx + dy * dy;
 
-    function resolveCircleRectCollision(entity, obstacle) {
-      const nearestX = clamp(entity.x, obstacle.x, obstacle.x + obstacle.w);
-      const nearestY = clamp(entity.y, obstacle.y, obstacle.y + obstacle.h);
-      const dx = entity.x - nearestX;
-      const dy = entity.y - nearestY;
-      const d = Math.hypot(dx, dy);
+      if (d2 >= entity.radius * entity.radius) return;
 
-      if (d === 0) {
-        const left = Math.abs(entity.x - obstacle.x);
-        const right = Math.abs(entity.x - (obstacle.x + obstacle.w));
-        const top = Math.abs(entity.y - obstacle.y);
-        const bottom = Math.abs(entity.y - (obstacle.y + obstacle.h));
-        const minSide = Math.min(left, right, top, bottom);
-        if (minSide === left) entity.x = obstacle.x - entity.radius;
-        else if (minSide === right) entity.x = obstacle.x + obstacle.w + entity.radius;
-        else if (minSide === top) entity.y = obstacle.y - entity.radius;
-        else entity.y = obstacle.y + obstacle.h + entity.radius;
+      if (d2 === 0) {
+        const left = Math.abs(entity.x - rect.x);
+        const right = Math.abs(entity.x - (rect.x + rect.w));
+        const top = Math.abs(entity.y - rect.y);
+        const bottom = Math.abs(entity.y - (rect.y + rect.h));
+        const minEdge = Math.min(left, right, top, bottom);
+
+        if (minEdge === left) entity.x = rect.x - entity.radius;
+        else if (minEdge === right) entity.x = rect.x + rect.w + entity.radius;
+        else if (minEdge === top) entity.y = rect.y - entity.radius;
+        else entity.y = rect.y + rect.h + entity.radius;
         return;
       }
 
+      const d = Math.sqrt(d2);
       const overlap = entity.radius - d;
-      if (overlap <= 0) return;
       entity.x += (dx / d) * overlap;
       entity.y += (dy / d) * overlap;
     }
@@ -751,10 +480,6 @@
     let selectedEditorObject = null;
     let editorMouseDown = false;
     let editorDragging = null;
-    let touchMovePointerId = null;
-    let touchMoveActive = false;
-    let touchMoveVector = { x: 0, y: 0 };
-    let attackRequested = false;
 
     function buildDefaultWalls(width, height, includeFarSection = false) {
       const walls = [
@@ -934,899 +659,832 @@
       },
       {
         id: 4,
-        name: "Ember Wilds",
-        bg: "#6e4a2f",
-        ground2: "#8b613e",
-        accent: "#e0a46d",
-        obstacleColor: "#3b2719",
-        slimeColor: "#f2a861",
-        bridgeColor: "#9c7244",
+        name: "Ash Stone Valley",
+        bg: "#59555b",
+        ground2: "#706b73",
+        accent: "#bdb8c1",
+        obstacleColor: "#363238",
+        slimeColor: "#d8c86a",
+        bridgeColor: "#9a7650",
         width: 4850,
         height: 2020,
         playerStart: { x: 120, y: 1010 },
         portal: { x: 4710, y: 1010, radius: 40 },
-        walls: [
-          { x: 0, y: 0, w: 740, h: 420, type: "rock" },
-          { x: 0, y: 1590, w: 740, h: 430, type: "rock" },
-          { x: 580, y: 0, w: 320, h: 280, type: "rock" },
-          { x: 580, y: 1720, w: 320, h: 300, type: "rock" },
-          { x: 900, y: 0, w: 260, h: 760, type: "caveWall" },
-          { x: 900, y: 1260, w: 260, h: 760, type: "caveWall" },
-          { x: 1310, y: 330, w: 230, h: 280, type: "rock" },
-          { x: 1460, y: 1380, w: 260, h: 280, type: "rock" },
-          { x: 1760, y: 440, w: 190, h: 230, type: "pillar" },
-          { x: 1860, y: 1320, w: 200, h: 230, type: "pillar" },
-          { x: 2150, y: 0, w: 220, h: 680, type: "caveWall" },
-          { x: 2150, y: 1360, w: 220, h: 660, type: "caveWall" },
-          { x: 2260, y: 780, w: 240, h: 450, type: "slime" },
-          { x: 2610, y: 310, w: 220, h: 250, type: "rock" },
-          { x: 2790, y: 1420, w: 230, h: 260, type: "rock" },
-          { x: 3010, y: 420, w: 180, h: 220, type: "pillar" },
-          { x: 3160, y: 1330, w: 190, h: 230, type: "pillar" },
-          { x: 3420, y: 0, w: 270, h: 760, type: "caveWall" },
-          { x: 3420, y: 1280, w: 270, h: 740, type: "caveWall" },
-          { x: 3680, y: 340, w: 210, h: 230, type: "rock" },
-          { x: 3680, y: 1450, w: 210, h: 230, type: "rock" },
-          { x: 4020, y: 0, w: 300, h: 720, type: "caveWall" },
-          { x: 4020, y: 1320, w: 300, h: 700, type: "caveWall" },
-          { x: 4330, y: 310, w: 220, h: 240, type: "rock" },
-          { x: 4330, y: 1470, w: 220, h: 240, type: "rock" }
-        ],
-        bridges: [
-          { x: 2230, y: 860, w: 300, h: 64, type: "bridge" }
-        ],
-        camps: [
-          { x: 780, y: 1010, count: 5, radius: 180 },
-          { x: 1650, y: 1010, count: 6, radius: 190 },
-          { x: 2600, y: 1000, count: 6, radius: 195 },
-          { x: 3530, y: 1000, count: 6, radius: 200 },
-          { x: 4380, y: 1010, count: 5, radius: 220 }
-        ],
-        decorations: {
-          type: "ember",
-          count: 220
-        },
+        walls: buildDefaultWalls(4850, 2020, true),
+        bridges: buildDefaultBridges(true),
+        camps: buildLaneCampDefs(4850, 2020, 40),
+        decorations: { type: "default", count: 160 },
         enemyHp: 118,
-        enemyDamage: 25,
-        enemySpeed: 1.55,
-        enemyCount: 42,
-        moneyDrop: [14, 21]
+        enemyDamage: 24,
+        enemySpeed: 1.58,
+        enemyCount: 40,
+        moneyDrop: [15, 22]
       },
       {
         id: 5,
-        name: "Final Rift",
-        bg: "#3a244a",
-        ground2: "#533162",
-        accent: "#b688d0",
-        obstacleColor: "#261631",
-        slimeColor: "#d2a6f3",
-        bridgeColor: "#7a5a34",
+        name: "Void Bloom Ridge",
+        bg: "#4e3265",
+        ground2: "#664481",
+        accent: "#c784ff",
+        obstacleColor: "#311d42",
+        slimeColor: "#ff89ff",
+        bridgeColor: "#9f7b58",
         width: 5300,
         height: 2120,
         playerStart: { x: 120, y: 1060 },
         portal: { x: 5160, y: 1060, radius: 40 },
-        walls: [
-          { x: 0, y: 0, w: 830, h: 430, type: "rock" },
-          { x: 0, y: 1690, w: 830, h: 430, type: "rock" },
-          { x: 640, y: 0, w: 320, h: 300, type: "rock" },
-          { x: 640, y: 1820, w: 320, h: 300, type: "rock" },
-          { x: 980, y: 0, w: 280, h: 780, type: "caveWall" },
-          { x: 980, y: 1340, w: 280, h: 780, type: "caveWall" },
-          { x: 1410, y: 320, w: 260, h: 290, type: "rock" },
-          { x: 1580, y: 1500, w: 280, h: 300, type: "rock" },
-          { x: 1910, y: 430, w: 200, h: 240, type: "pillar" },
-          { x: 2050, y: 1450, w: 210, h: 250, type: "pillar" },
-          { x: 2330, y: 0, w: 230, h: 700, type: "caveWall" },
-          { x: 2330, y: 1420, w: 230, h: 700, type: "caveWall" },
-          { x: 2440, y: 820, w: 250, h: 490, type: "slime" },
-          { x: 2800, y: 320, w: 240, h: 260, type: "rock" },
-          { x: 2990, y: 1500, w: 250, h: 270, type: "rock" },
-          { x: 3230, y: 440, w: 190, h: 220, type: "pillar" },
-          { x: 3380, y: 1460, w: 200, h: 230, type: "pillar" },
-          { x: 3640, y: 0, w: 280, h: 760, type: "caveWall" },
-          { x: 3640, y: 1360, w: 280, h: 760, type: "caveWall" },
-          { x: 3920, y: 320, w: 220, h: 240, type: "rock" },
-          { x: 3920, y: 1530, w: 220, h: 250, type: "rock" },
-          { x: 4250, y: 0, w: 310, h: 750, type: "caveWall" },
-          { x: 4250, y: 1370, w: 310, h: 750, type: "caveWall" },
-          { x: 4570, y: 320, w: 230, h: 250, type: "rock" },
-          { x: 4570, y: 1530, w: 230, h: 250, type: "rock" },
-          { x: 4910, y: 0, w: 390, h: 730, type: "caveWall" },
-          { x: 4910, y: 1390, w: 390, h: 730, type: "caveWall" }
-        ],
-        bridges: [
-          { x: 2410, y: 910, w: 320, h: 66, type: "bridge" }
-        ],
-        camps: [
-          { x: 820, y: 1060, count: 6, radius: 185 },
-          { x: 1770, y: 1060, count: 7, radius: 200 },
-          { x: 2750, y: 1060, count: 7, radius: 205 },
-          { x: 3720, y: 1060, count: 7, radius: 215 },
-          { x: 4650, y: 1060, count: 7, radius: 225 }
-        ],
-        decorations: {
-          type: "rift",
-          count: 240
-        },
-        enemyHp: 155,
+        walls: buildDefaultWalls(5300, 2120, true),
+        bridges: buildDefaultBridges(true),
+        camps: buildLaneCampDefs(5300, 2120, 44),
+        decorations: { type: "default", count: 160 },
+        enemyHp: 160,
         enemyDamage: 30,
-        enemySpeed: 1.65,
-        enemyCount: 50,
-        moneyDrop: [16, 24]
+        enemySpeed: 1.72,
+        enemyCount: 44,
+        moneyDrop: [18, 26]
       }
     ];
 
-    const STORE_ITEMS = [
-      {
-        key: "maxHp",
-        label: "Max HP +20",
-        desc: "Increase survivability for longer fights.",
-        baseCost: 65,
-        growth: 1.35,
-        apply: p => { p.maxHp += 20; p.hp += 20; }
-      },
-      {
-        key: "damage",
-        label: "Damage +5",
-        desc: "Stronger hits and faster enemy clears.",
-        baseCost: 75,
-        growth: 1.4,
-        apply: p => { p.damage += 5; }
-      },
-      {
-        key: "attackSpeed",
-        label: "Attack Speed +10%",
-        desc: "Attack more frequently.",
-        baseCost: 85,
-        growth: 1.45,
-        apply: p => { p.attackCooldown = Math.max(6, Math.floor(p.attackCooldown * 0.9)); }
-      },
-      {
-        key: "moveSpeed",
-        label: "Move Speed +0.2",
-        desc: "Move through camps faster.",
-        baseCost: 70,
-        growth: 1.32,
-        apply: p => { p.speed += 0.2; }
-      },
-      {
-        key: "armor",
-        label: "Armor +5%",
-        desc: "Reduce incoming damage.",
-        baseCost: 80,
-        growth: 1.4,
-        apply: p => { p.armor = clamp(p.armor + 0.05, 0, 0.75); }
-      }
-    ];
-
-    const ICONS = {
-      wall: "█",
-      bridge: "═",
-      camp: "◎",
-      portal: "◉",
-      playerStart: "▲",
-      decoration: "✦"
-    };
-
-    function cloneLevelData(base) {
-      return JSON.parse(JSON.stringify(base));
-    }
-
-    function deepCloneLevels(levels) {
-      return JSON.parse(JSON.stringify(levels));
-    }
-
-    function createTerrainTexture(level) {
-      const c = document.createElement("canvas");
-      c.width = 220;
-      c.height = 220;
-      const g = c.getContext("2d");
-
-      g.fillStyle = level.bg;
-      g.fillRect(0, 0, c.width, c.height);
-
-      for (let i = 0; i < 360; i++) {
-        const x = rand(0, c.width);
-        const y = rand(0, c.height);
-        const r = rand(0.8, 2.3);
-        g.fillStyle = i % 3 === 0 ? shadeColor(level.ground2, rand(-18, 8)) : shadeColor(level.accent, rand(-25, 10));
-        g.beginPath();
-        g.arc(x, y, r, 0, Math.PI * 2);
-        g.fill();
-      }
-
-      for (let i = 0; i < 32; i++) {
-        const x = rand(0, c.width);
-        const y = rand(0, c.height);
-        const w = rand(8, 18);
-        const h = rand(3, 7);
-        g.fillStyle = "rgba(0,0,0,0.12)";
-        g.fillRect(x, y, w, h);
-      }
-
-      return ctx.createPattern(c, "repeat");
-    }
-
-    function setEditorMode(enabled) {
-      editorMode = enabled;
-      editorPanel.classList.toggle("hidden", !editorMode);
-      editorToggle.textContent = `Editor: ${editorMode ? "ON" : "OFF"}`;
-      if (!editorMode) {
-        selectedEditorObject = null;
-        editorDragging = null;
-        editorMouseDown = false;
-      }
-      updateEditorToolStyles();
-    }
-
-    function setEditorTool(tool) {
-      activeEditorTool = tool;
-      updateEditorToolStyles();
-    }
-
-    function updateEditorToolStyles() {
-      for (const [tool, btn] of Object.entries(editorTools)) {
-        const active = tool === activeEditorTool;
-        btn.classList.toggle("active", active);
-        btn.textContent = `${ICONS[tool]} ${tool}`;
-      }
-    }
-
-    function refreshEditorLevelDropdown() {
-      editorLevelSelect.innerHTML = "";
-      for (let i = 0; i < LEVELS.length; i++) {
-        const option = document.createElement("option");
-        option.value = i;
-        option.textContent = `Level ${i + 1}: ${LEVELS[i].name}`;
-        if (i === currentLevelIndex) option.selected = true;
-        editorLevelSelect.appendChild(option);
-      }
-    }
-
-
-    function bindUiEvents() {
-      swordBtn.addEventListener("click", () => startGame("sword"));
-      shooterBtn.addEventListener("click", () => startGame("shooter"));
-      continueBtn.addEventListener("click", closeStoreAndContinue);
-      restartBtn.addEventListener("click", restartGame);
-      playAgainBtn.addEventListener("click", restartGame);
-
-      editorToggle.addEventListener("click", () => {
-        setEditorMode(!editorMode);
-      });
-
-      for (const [tool, btn] of Object.entries(editorTools)) {
-        btn.addEventListener("click", () => setEditorTool(tool));
-      }
-
-      editorLevelSelect.addEventListener("change", () => {
-        const idx = Number(editorLevelSelect.value);
-        if (Number.isFinite(idx)) loadLevel(idx);
-      });
-
-      editorDelete.addEventListener("click", () => {
-        if (typeof deleteSelectedEditorObject === "function") {
-          deleteSelectedEditorObject();
-        }
-      });
-
-      editorExport.addEventListener("click", () => {
-        const data = LEVELS[currentLevelIndex] || null;
-        editorOutput.value = JSON.stringify(data, null, 2);
-      });
-
-      setupTouchControls();
-    }
-
-    function shouldUseTouchControls() {
-      const touchCapable = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
-      const smallScreen = Math.min(window.innerWidth, window.innerHeight) <= 900;
-      return touchCapable && smallScreen;
-    }
-
-    function setTouchMoveVectorFromPoint(clientX, clientY) {
-      const rect = touchMovePad.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-
-      const maxR = rect.width * 0.33;
-      let dx = clientX - cx;
-      let dy = clientY - cy;
-      const d = Math.hypot(dx, dy);
-
-      if (d > maxR && d > 0) {
-        dx = dx / d * maxR;
-        dy = dy / d * maxR;
-      }
-
-      touchMoveKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-      touchMoveVector = normalize(dx / maxR, dy / maxR);
-      touchMoveActive = true;
-    }
-
-    function resetTouchMove() {
-      touchMovePointerId = null;
-      touchMoveActive = false;
-      touchMoveVector = { x: 0, y: 0 };
-      touchMoveKnob.style.transform = "translate(0px, 0px)";
-    }
-
-    function setupTouchControls() {
-      function updateTouchVisibility() {
-        const visible = shouldUseTouchControls();
-        touchControls.classList.toggle("visible", visible);
-        if (!visible) resetTouchMove();
-      }
-
-      updateTouchVisibility();
-      window.addEventListener("resize", updateTouchVisibility);
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", updateTouchVisibility);
-      }
-
-      touchMovePad.addEventListener("pointerdown", e => {
-        if (!shouldUseTouchControls()) return;
-        e.preventDefault();
-        touchMovePointerId = e.pointerId;
-        touchMovePad.setPointerCapture(e.pointerId);
-        setTouchMoveVectorFromPoint(e.clientX, e.clientY);
-      });
-
-      touchMovePad.addEventListener("pointermove", e => {
-        if (e.pointerId !== touchMovePointerId) return;
-        e.preventDefault();
-        setTouchMoveVectorFromPoint(e.clientX, e.clientY);
-      });
-
-      const endMove = e => {
-        if (touchMovePointerId !== null && e.pointerId !== touchMovePointerId) return;
-        resetTouchMove();
-      };
-
-      touchMovePad.addEventListener("pointerup", endMove);
-      touchMovePad.addEventListener("pointercancel", endMove);
-
-      touchAttackBtn.addEventListener("pointerdown", e => {
-        if (!shouldUseTouchControls()) return;
-        e.preventDefault();
-        attackRequested = true;
-      });
-    }
-
-    function createPlayer(classType) {
-      const isSword = classType === "sword";
+    function makePlayer(type) {
+      const isSword = type === "sword";
       return {
-        classType,
-        x: 0,
-        y: 0,
+        x: 120,
+        y: 850,
         radius: 18,
-        speed: isSword ? 2.65 : 2.45,
-        maxHp: isSword ? 240 : 190,
-        hp: isSword ? 240 : 190,
-        damage: isSword ? 30 : 22,
-        armor: isSword ? 0.15 : 0.05,
-        attackRange: isSword ? 74 : 390,
-        attackCooldown: isSword ? 28 : 22,
-        projectileSpeed: isSword ? 0 : 7.5,
+        classType: type,
+        color: isSword ? "#4ab2ff" : "#ffd24f",
+        maxHp: isSword ? 140 : 110,
+        hp: isSword ? 140 : 110,
+        power: isSword ? 26 : 18,
+        speed: isSword ? 3.6 : 4.0,
+        range: isSword ? 78 : 320,
+        attackCooldown: isSword ? 24 : 16,
+        projectileSpeed: 11,
+        projectileSize: 5,
+        projectileCount: 1,
+        swordRangeBonus: 0,
+        armor: 0,
         money: 0,
-        attackStyle: isSword ? "melee" : "ranged",
-        upgrades: {
-          maxHp: 0,
-          damage: 0,
-          attackSpeed: 0,
-          moveSpeed: 0,
-          armor: 0
-        }
+        contactDamageCooldown: 0
       };
     }
 
-    function scaleEnemyByLevel(levelData) {
-      return {
-        hp: levelData.enemyHp,
-        damage: levelData.enemyDamage,
-        speed: levelData.enemySpeed
-      };
+    function startGame(type) {
+      player = makePlayer(type);
+      currentLevelIndex = 0;
+      pausedForStore = false;
+      running = true;
+      classText.textContent = type === "sword" ? "Sword" : "Shooter";
+      menu.classList.add("hidden");
+      gameOverScreen.classList.add("hidden");
+      winScreen.classList.add("hidden");
+      storeScreen.classList.add("hidden");
+      loadLevel(currentLevelIndex);
+      loop();
     }
 
-    function spawnEnemyAtCamp(camp, stats) {
-      const angle = rand(0, Math.PI * 2);
-      const r = rand(10, camp.radius * 0.55);
-      return {
-        x: camp.x + Math.cos(angle) * r,
-        y: camp.y + Math.sin(angle) * r,
-        spawnX: camp.x,
-        spawnY: camp.y,
-        aggroRadius: Math.max(210, camp.radius + 65),
-        campRadius: camp.radius,
-        radius: 15,
-        hp: stats.hp,
-        maxHp: stats.hp,
-        damage: stats.damage,
-        speed: stats.speed,
-        color: "#e94f37",
-        attackCooldown: 48,
-        attackTimer: rand(0, 40),
-        aggro: false
-      };
+    swordBtn.addEventListener("click", () => startGame("sword"));
+    shooterBtn.addEventListener("click", () => startGame("shooter"));
+
+    restartBtn.addEventListener("click", () => {
+      gameOverScreen.classList.add("hidden");
+      menu.classList.remove("hidden");
+    });
+
+    playAgainBtn.addEventListener("click", () => {
+      winScreen.classList.add("hidden");
+      menu.classList.remove("hidden");
+    });
+
+    function buildObstacles(spec) {
+      return structuredClone(spec.walls || []);
     }
 
-    function spawnEnemiesForLevel(levelData) {
-      const enemyStats = scaleEnemyByLevel(levelData);
-      const arr = [];
-      for (const camp of levelData.camps) {
-        for (let i = 0; i < camp.count; i++) {
-          arr.push(spawnEnemyAtCamp(camp, enemyStats));
-        }
-      }
-      return arr;
+    function buildBridges(spec) {
+      return structuredClone(spec.bridges || []);
     }
 
-    function spawnDecorations(levelData) {
-      const out = [];
-      const count = levelData.decorations?.count || 140;
-      for (let i = 0; i < count; i++) {
-        out.push({
-          x: rand(100, levelData.width - 100),
-          y: rand(100, levelData.height - 100),
-          r: rand(5, 16),
-          type: i % 5 === 0 ? "crystal" : "bush"
-        });
-      }
+    function buildEnemyCamps(spec) {
+      const camps = [];
+      for (const camp of (spec.camps || [])) {
+        const spreadX = spec.id === 2 ? 65 : 70;
+        const spreadY = spec.id === 2 ? 115 : 170;
+        const campX = camp.x;
+        const campY = camp.y;
+        const count = camp.count;
+        const campRadius = camp.radius;
 
-      if (levelData.decorations?.ruins) {
-        for (const [x, y] of levelData.decorations.ruins) {
-          out.push({ x, y, r: rand(14, 22), type: "ruin" });
-        }
-      }
-
-      return out;
-    }
-
-    function buildObstacles(levelData) {
-      const obs = [];
-      for (const w of levelData.walls) {
-        obs.push({
-          x: w.x,
-          y: w.y,
-          w: w.w,
-          h: w.h,
-          type: w.type || "rock",
-          solid: true
-        });
-      }
-
-      for (const b of levelData.bridges) {
-        obs.push({
-          x: b.x,
-          y: b.y,
-          w: b.w,
-          h: b.h,
-          type: "bridge",
-          solid: false
-        });
-      }
-
-      return obs;
-    }
-
-    function buildDestructibles(levelData) {
-      const arr = [];
-      const camps = levelData.camps || [];
-      let i = 0;
-
-      for (const camp of camps) {
-        const count = 2 + (i % 2);
-        for (let k = 0; k < count; k++) {
-          const angle = rand(0, Math.PI * 2);
-          const r = rand(camp.radius * 0.25, camp.radius * 0.8);
-          const x = camp.x + Math.cos(angle) * r;
-          const y = camp.y + Math.sin(angle) * r;
-          arr.push({
-            x, y,
-            radius: k % 2 === 0 ? 18 : 15,
-            hp: k % 2 === 0 ? 40 : 28,
-            maxHp: k % 2 === 0 ? 40 : 28,
-            type: k % 2 === 0 ? "crate" : "pod",
-            dead: false,
+        for (let j = 0; j < count; j++) {
+          const ox = rand(-spreadX, spreadX);
+          const oy = rand(-spreadY, spreadY);
+          camps.push({
+            x: campX + ox,
+            y: campY + oy,
+            homeX: campX + ox,
+            homeY: campY + oy,
+            campX,
+            campY,
+            campRadius,
+            radius: 16,
+            size: 26,
+            hp: spec.enemyHp,
+            maxHp: spec.enemyHp,
+            speed: spec.enemySpeed,
+            damage: spec.enemyDamage,
+            aggro: false,
+            aggroRange: 230,
+            leashRange: 360,
+            money: Math.floor(rand(spec.moneyDrop[0], spec.moneyDrop[1] + 1)),
             hitFlash: 0
           });
         }
-        i++;
+      }
+
+      return camps;
+    }
+
+    function buildDestructibles(spec) {
+      const arr = [];
+      const points = [690, 1140, 1670, 2140, 2730, 3290, 3820, 4380, 4880];
+      for (const x of points) {
+        if (x < spec.mapW - 120) {
+          arr.push({
+            x: x + rand(-40, 30),
+            y: spec.mapH / 2 + rand(-260, 260),
+            radius: 24,
+            hp: 28,
+            maxHp: 28,
+            reward: Math.floor(rand(8, 18)),
+            hitFlash: 0,
+            dead: false,
+            type: Math.random() > 0.5 ? "crate" : "pod"
+          });
+        }
+      }
+      return arr;
+    }
+
+    function buildDecor(spec) {
+      const arr = [];
+      const decorSpec = spec.decorations || { type: "default", count: 160 };
+
+      if (Array.isArray(decorSpec.items)) {
+        return structuredClone(decorSpec.items);
+      }
+
+      if (decorSpec.type === "crimson") {
+        for (let i = 0; i < decorSpec.count; i++) {
+          arr.push({
+            kind: i % 5 === 0 ? "plant" : "stone",
+            x: rand(40, spec.mapW - 40),
+            y: rand(40, spec.mapH - 40),
+            r: i % 5 === 0 ? rand(8, 14) : rand(6, 11)
+          });
+        }
+
+        const ruins = decorSpec.ruins || [];
+        for (const [x, y] of ruins) {
+          arr.push({ kind: "ruin", x, y, r: rand(11, 16) });
+          arr.push({ kind: "ruin", x: x + rand(-22, 22), y: y + rand(-22, 22), r: rand(9, 14) });
+        }
+
+        return arr;
+      }
+
+      for (let i = 0; i < decorSpec.count; i++) {
+        arr.push({
+          kind: i % 7 === 0 ? "plant" : "stone",
+          x: rand(40, spec.mapW - 40),
+          y: rand(40, spec.mapH - 40),
+          r: i % 7 === 0 ? rand(6, 12) : rand(4, 9)
+        });
       }
 
       return arr;
     }
 
-    function addEffect(type, x, y, life = 18, extra = {}) {
-      effects.push({ type, x, y, life, ...extra });
+    function createTerrainTexture(spec) {
+      const tile = document.createElement("canvas");
+      tile.width = 256;
+      tile.height = 256;
+      const tctx = tile.getContext("2d");
+
+      tctx.fillStyle = spec.bg;
+      tctx.fillRect(0, 0, tile.width, tile.height);
+
+      for (let i = 0; i < 2200; i++) {
+        const r = rand(0.5, 2.2);
+        tctx.beginPath();
+        tctx.arc(rand(0, tile.width), rand(0, tile.height), r, 0, Math.PI * 2);
+        tctx.fillStyle = i % 2 ? `${spec.ground2}40` : `${spec.accent}26`;
+        tctx.fill();
+      }
+
+      for (let i = 0; i < 900; i++) {
+        const g = 70 + Math.floor(rand(0, 50));
+        tctx.fillStyle = `rgba(${g - 25},${g},${g - 35},0.09)`;
+        tctx.fillRect(rand(0, tile.width), rand(0, tile.height), rand(1, 3), rand(1, 3));
+      }
+
+      for (let i = 0; i < 40; i++) {
+        const sx = rand(0, tile.width);
+        const sy = rand(0, tile.height);
+        tctx.strokeStyle = "rgba(0,0,0,0.08)";
+        tctx.lineWidth = rand(12, 24);
+        tctx.beginPath();
+        tctx.moveTo(sx, sy);
+        tctx.bezierCurveTo(sx + rand(-50, 50), sy + rand(-10, 10), sx + rand(20, 80), sy + rand(-30, 30), sx + rand(90, 150), sy + rand(-20, 20));
+        tctx.stroke();
+      }
+
+      return ctx.createPattern(tile, "repeat");
     }
 
-    function deleteSelectedEditorObject() {
-      selectedEditorObject = null;
-      editorDragging = null;
-    }
-
-    function addDamageText(x, y, amount, hurt = false) {
-      damageTexts.push({
-        x,
-        y,
-        text: `${Math.round(amount)}`,
-        life: 28,
-        hurt
-      });
-    }
-
-    function placePlayerAtStart() {
-      player.x = currentLevel.playerStart.x;
-      player.y = currentLevel.playerStart.y;
-    }
-
-    function setupLevel(index, keepPlayerState = true) {
-      currentLevelIndex = clamp(index, 0, LEVELS.length - 1);
-
-      const baseLevel = cloneLevelData(LEVELS[currentLevelIndex]);
-      currentLevel = {
-        ...baseLevel,
-        mapW: baseLevel.width,
-        mapH: baseLevel.height
-      };
-
-      currentLevel.decorationsData = spawnDecorations(currentLevel);
+    function loadLevel(index) {
+      currentLevelIndex = index;
+      currentLevel = structuredClone(LEVELS[index]);
+      currentLevel.mapW = currentLevel.width;
+      currentLevel.mapH = currentLevel.height;
       currentLevel.obstacles = buildObstacles(currentLevel);
+      currentLevel.bridges = buildBridges(currentLevel);
       currentLevel.portal = { ...currentLevel.portal, open: false };
-      currentLevel.storeZone = {
-        x: currentLevel.portal.x - 180,
-        y: currentLevel.portal.y - 120,
-        w: 360,
-        h: 240
+      currentLevel.storeZone = { x: currentLevel.mapW - 300, y: currentLevel.mapH / 2 - 140, w: 120, h: 280 };
+      currentLevel.decor = buildDecor(currentLevel);
+      currentLevel.decorations.items = structuredClone(currentLevel.decor);
+      terrainTexture = createTerrainTexture(currentLevel);
+      currentLevel.shopKeeper = {
+        x: currentLevel.storeZone.x + currentLevel.storeZone.w / 2,
+        y: currentLevel.storeZone.y + currentLevel.storeZone.h / 2 + 30
       };
 
-      enemies = spawnEnemiesForLevel(currentLevel);
+      enemies = buildEnemyCamps(currentLevel);
+      destructibles = buildDestructibles(currentLevel);
       projectiles = [];
       coins = [];
       effects = [];
       damageTexts = [];
-      destructibles = buildDestructibles(currentLevel);
 
-      terrainTexture = createTerrainTexture(currentLevel);
+      player.x = currentLevel.playerStart.x;
+      player.y = currentLevel.playerStart.y;
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.15));
 
-      if (!keepPlayerState) {
-        player.money = 0;
-      }
-
-      placePlayerAtStart();
-      updateHud();
-
-      menu.classList.add("hidden");
+      camera.x = 0;
+      camera.y = 0;
+      attackTimer = 0;
+      pausedForStore = false;
+      running = true;
       storeScreen.classList.add("hidden");
-      gameOverScreen.classList.add("hidden");
-      winScreen.classList.add("hidden");
-    }
 
-    function startGame(classType) {
-      player = createPlayer(classType);
-      currentLevelIndex = 0;
-      setupLevel(currentLevelIndex, false);
-      running = true;
-      pausedForStore = false;
-      loop();
-    }
-
-    function restartGame() {
-      if (!player) {
-        startGame("sword");
-        return;
-      }
-      const classType = player.classType;
-      player = createPlayer(classType);
-      currentLevelIndex = 0;
-      setupLevel(currentLevelIndex, false);
-      running = true;
-      pausedForStore = false;
-      loop();
-    }
-
-    function loadLevel(index) {
-      const preservePlayer = !!player;
-      if (!preservePlayer) return;
-      setupLevel(index, true);
-      pausedForStore = false;
-      if (!running) {
-        running = true;
-      }
-      loop();
+      levelText.textContent = String(index + 1);
+      areaText.textContent = currentLevel.name;
+      selectedEditorObject = null;
+      refreshEditorToolButtons();
       refreshEditorLevelDropdown();
     }
 
-    function updateHud() {
-      if (!player || !currentLevel) return;
-
-      classText.textContent = player.classType === "sword" ? "Sword" : "Shooter";
-      levelText.textContent = `${currentLevelIndex + 1}`;
-      areaText.textContent = currentLevel.name;
-      enemiesText.textContent = enemies.length.toString();
-
-      hpText.textContent = `${Math.max(0, Math.ceil(player.hp))} / ${Math.ceil(player.maxHp)}`;
-      hpBar.style.width = `${clamp((player.hp / player.maxHp) * 100, 0, 100)}%`;
-
-      moneyText.textContent = Math.floor(player.money).toString();
-      powerText.textContent = player.damage.toFixed(0);
-      attackText.textContent = `${(60 / player.attackCooldown).toFixed(2)} / sec`;
-      speedText.textContent = player.speed.toFixed(2);
-      armorText.textContent = `${Math.round(player.armor * 100)}%`;
-      portalText.textContent = currentLevel.portal.open ? "Open" : "Locked";
-      storeMoneyText.textContent = Math.floor(player.money).toString();
+    function setEditorMode(next) {
+      editorMode = next;
+      editorToggle.textContent = `Editor: ${editorMode ? "ON" : "OFF"}`;
+      if (editorMode) editorPanel.classList.remove("hidden");
+      else editorPanel.classList.add("hidden");
+      selectedEditorObject = null;
+      editorDragging = null;
     }
 
-    function applyStoreItem(item) {
-      const level = player.upgrades[item.key];
-      const cost = Math.floor(item.baseCost * Math.pow(item.growth, level));
-      if (player.money < cost) return false;
-
-      player.money -= cost;
-      player.upgrades[item.key] += 1;
-      item.apply(player);
-      return true;
+    function setEditorTool(tool) {
+      activeEditorTool = tool;
+      refreshEditorToolButtons();
     }
 
-    function renderStoreItems() {
-      storeGrid.innerHTML = "";
-
-      for (const item of STORE_ITEMS) {
-        const level = player.upgrades[item.key];
-        const cost = Math.floor(item.baseCost * Math.pow(item.growth, level));
-
-        const card = document.createElement("div");
-        card.className = "store-card";
-
-        const title = document.createElement("h3");
-        title.textContent = `${item.label} (${level})`;
-
-        const desc = document.createElement("p");
-        desc.textContent = item.desc;
-
-        const btnRow = document.createElement("div");
-        btnRow.className = "btn-row";
-        btnRow.style.justifyContent = "flex-start";
-        btnRow.style.marginTop = "0";
-
-        const buyBtn = document.createElement("button");
-        buyBtn.textContent = `Buy - $${cost}`;
-        buyBtn.disabled = player.money < cost;
-        if (buyBtn.disabled) {
-          buyBtn.style.opacity = "0.6";
-          buyBtn.style.cursor = "not-allowed";
-        }
-
-        buyBtn.addEventListener("click", () => {
-          if (applyStoreItem(item)) {
-            renderStoreItems();
-            updateHud();
-          }
-        });
-
-        btnRow.appendChild(buyBtn);
-
-        card.appendChild(title);
-        card.appendChild(desc);
-        card.appendChild(btnRow);
-
-        storeGrid.appendChild(card);
+    function refreshEditorToolButtons() {
+      for (const [tool, btn] of Object.entries(editorTools)) {
+        btn.classList.toggle("active", tool === activeEditorTool);
       }
     }
 
-    function openStore() {
-      pausedForStore = true;
-      renderStoreItems();
-      storeScreen.classList.remove("hidden");
-      updateHud();
+    function worldFromCanvasEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      return { x: screenX + camera.x, y: screenY + camera.y };
     }
 
-    function closeStoreAndContinue() {
-      storeScreen.classList.add("hidden");
-      pausedForStore = false;
+    function refreshEditorLevelDropdown() {
+      if (!editorLevelSelect) return;
+      editorLevelSelect.innerHTML = "";
+      for (let i = 0; i < LEVELS.length; i++) {
+        const option = document.createElement("option");
+        option.value = String(i);
+        option.textContent = `${LEVELS[i].id}. ${LEVELS[i].name}`;
+        editorLevelSelect.appendChild(option);
+      }
+      editorLevelSelect.value = String(currentLevelIndex);
+    }
 
-      if (currentLevelIndex + 1 >= LEVELS.length) {
-        running = false;
-        winText.textContent = `Class: ${player.classType === "sword" ? "Sword" : "Shooter"} | Money: $${Math.floor(player.money)}`;
-        winScreen.classList.remove("hidden");
+    function getEditorResizeMode(world, target) {
+      if (!target) return "move";
+      const { tool, ref } = target;
+      if (tool === "camp") {
+        const d = dist(world.x, world.y, ref.x, ref.y);
+        if (Math.abs(d - ref.radius) <= 16) return "resizeCampRadius";
+      }
+      if (tool === "wall" || tool === "bridge") {
+        const nearRight = Math.abs(world.x - (ref.x + ref.w)) <= 18 && world.y >= ref.y - 10 && world.y <= ref.y + ref.h + 10;
+        const nearBottom = Math.abs(world.y - (ref.y + ref.h)) <= 18 && world.x >= ref.x - 10 && world.x <= ref.x + ref.w + 10;
+        if (nearRight && nearBottom) return "resizeRect";
+        if (nearRight) return "resizeRectW";
+        if (nearBottom) return "resizeRectH";
+      }
+      return "move";
+    }
+
+    function getEditorObjectsByTool(tool) {
+      if (!currentLevel) return [];
+      if (tool === "wall") return currentLevel.walls;
+      if (tool === "bridge") return currentLevel.bridges;
+      if (tool === "camp") return currentLevel.camps;
+      if (tool === "decoration") return currentLevel.decorations.items;
+      return [];
+    }
+
+    function findObjectAtPoint(x, y, tool) {
+      if (!currentLevel) return null;
+
+      if (tool === "portal") {
+        return dist(x, y, currentLevel.portal.x, currentLevel.portal.y) <= currentLevel.portal.radius + 10
+          ? { tool, ref: currentLevel.portal }
+          : null;
+      }
+
+      if (tool === "playerStart") {
+        return dist(x, y, currentLevel.playerStart.x, currentLevel.playerStart.y) <= 18
+          ? { tool, ref: currentLevel.playerStart }
+          : null;
+      }
+
+      const arr = getEditorObjectsByTool(tool);
+      if (!arr) return null;
+
+      if (tool === "camp") {
+        for (const c of arr) {
+          if (dist(x, y, c.x, c.y) <= c.radius) return { tool, ref: c };
+        }
+        return null;
+      }
+
+      if (tool === "decoration") {
+        for (const d of arr) {
+          if (dist(x, y, d.x, d.y) <= Math.max(10, d.r || 10)) return { tool, ref: d };
+        }
+        return null;
+      }
+
+      for (const o of arr) {
+        if (x >= o.x && x <= o.x + o.w && y >= o.y && y <= o.y + o.h) {
+          return { tool, ref: o };
+        }
+      }
+      return null;
+    }
+
+    function placeEditorObject(x, y, tool) {
+      if (!currentLevel) return;
+      if (tool === "wall") {
+        const obj = { x: Math.round(x - 80), y: Math.round(y - 50), w: 160, h: 100, type: "rock" };
+        currentLevel.walls.push(obj);
+        currentLevel.obstacles = buildObstacles(currentLevel);
+        selectedEditorObject = { tool, ref: obj };
+        return;
+      }
+      if (tool === "bridge") {
+        const obj = { x: Math.round(x - 70), y: Math.round(y - 20), w: 140, h: 40, type: "bridge" };
+        currentLevel.bridges.push(obj);
+        selectedEditorObject = { tool, ref: obj };
+        return;
+      }
+      if (tool === "camp") {
+        const obj = { x: Math.round(x), y: Math.round(y), count: 4, radius: 180 };
+        currentLevel.camps.push(obj);
+        enemies = buildEnemyCamps(currentLevel);
+        selectedEditorObject = { tool, ref: obj };
+        return;
+      }
+      if (tool === "portal") {
+        currentLevel.portal.x = Math.round(x);
+        currentLevel.portal.y = Math.round(y);
+        selectedEditorObject = { tool, ref: currentLevel.portal };
+        return;
+      }
+      if (tool === "playerStart") {
+        currentLevel.playerStart.x = Math.round(x);
+        currentLevel.playerStart.y = Math.round(y);
+        selectedEditorObject = { tool, ref: currentLevel.playerStart };
+        return;
+      }
+      if (tool === "decoration") {
+        const obj = { kind: "stone", x: Math.round(x), y: Math.round(y), r: 14 };
+        currentLevel.decorations.items.push(obj);
+        currentLevel.decor.push(obj);
+        selectedEditorObject = { tool, ref: obj };
+      }
+    }
+
+    function deleteSelectedEditorObject() {
+      if (!selectedEditorObject || !currentLevel) return;
+      const { tool, ref } = selectedEditorObject;
+
+      if (tool === "portal" || tool === "playerStart") {
         return;
       }
 
-      currentLevelIndex += 1;
-      setupLevel(currentLevelIndex, true);
-      running = true;
-      loop();
-    }
-
-    function endGame() {
-      running = false;
-      pausedForStore = false;
-      gameOverText.textContent = `You reached level ${currentLevelIndex + 1}.`;
-      gameOverScreen.classList.remove("hidden");
-    }
-
-    function normalize(vx, vy) {
-      const d = Math.hypot(vx, vy);
-      if (!d) return { x: 0, y: 0 };
-      return { x: vx / d, y: vy / d };
-    }
-
-    function getMovementInput() {
-      const up = keys["w"] || keys["arrowup"];
-      const down = keys["s"] || keys["arrowdown"];
-      const left = keys["a"] || keys["arrowleft"];
-      const right = keys["d"] || keys["arrowright"];
-
-      let vx = 0;
-      let vy = 0;
-
-      if (up) vy -= 1;
-      if (down) vy += 1;
-      if (left) vx -= 1;
-      if (right) vx += 1;
-
-      const keyboard = normalize(vx, vy);
-
-      if (!shouldUseTouchControls() || !touchMoveActive) {
-        return keyboard;
+      const arr = getEditorObjectsByTool(tool);
+      const idx = arr.indexOf(ref);
+      if (idx !== -1) {
+        arr.splice(idx, 1);
       }
 
-      return normalize(keyboard.x + touchMoveVector.x, keyboard.y + touchMoveVector.y);
+      if (tool === "wall") {
+        currentLevel.obstacles = buildObstacles(currentLevel);
+      }
+      if (tool === "camp") {
+        enemies = buildEnemyCamps(currentLevel);
+      }
+      if (tool === "decoration") {
+        currentLevel.decor = structuredClone(currentLevel.decorations.items);
+      }
+
+      selectedEditorObject = null;
+    }
+
+    function exportCurrentLevelData() {
+      if (!currentLevel) {
+        editorOutput.value = "";
+        return;
+      }
+
+      const exported = {
+        id: currentLevel.id,
+        name: currentLevel.name,
+        width: currentLevel.width,
+        height: currentLevel.height,
+        playerStart: currentLevel.playerStart,
+        portal: {
+          x: currentLevel.portal.x,
+          y: currentLevel.portal.y,
+          radius: currentLevel.portal.radius
+        },
+        walls: currentLevel.walls,
+        bridges: currentLevel.bridges,
+        camps: currentLevel.camps,
+        decorations: {
+          type: currentLevel.decorations.type,
+          count: currentLevel.decorations.items.length,
+          items: currentLevel.decorations.items
+        }
+      };
+
+      editorOutput.value = JSON.stringify(exported, null, 2);
+    }
+
+    canvas.addEventListener("mousedown", e => {
+      if (!editorMode || !currentLevel || menu.classList.contains("hidden") === false) return;
+      if (!running && !pausedForStore) return;
+
+      editorMouseDown = true;
+
+      const world = worldFromCanvasEvent(e);
+      const found = findObjectAtPoint(world.x, world.y, activeEditorTool);
+      if (found) {
+        selectedEditorObject = found;
+        editorDragging = {
+          mode: getEditorResizeMode(world, found),
+          startX: world.x,
+          startY: world.y,
+          original: structuredClone(found.ref)
+        };
+      } else {
+        placeEditorObject(world.x, world.y, activeEditorTool);
+        editorDragging = null;
+      }
+    });
+
+    canvas.addEventListener("mousemove", e => {
+      if (!editorMode || !currentLevel || !editorMouseDown || !selectedEditorObject || !editorDragging) return;
+      const world = worldFromCanvasEvent(e);
+      const { tool, ref } = selectedEditorObject;
+      const dx = world.x - editorDragging.startX;
+      const dy = world.y - editorDragging.startY;
+
+      if ((editorDragging.mode === "resizeRect" || editorDragging.mode === "resizeRectW" || editorDragging.mode === "resizeRectH") && (tool === "wall" || tool === "bridge")) {
+        if (editorDragging.mode === "resizeRect" || editorDragging.mode === "resizeRectW") {
+          ref.w = Math.max(20, Math.round(editorDragging.original.w + dx));
+        }
+        if (editorDragging.mode === "resizeRect" || editorDragging.mode === "resizeRectH") {
+          ref.h = Math.max(20, Math.round(editorDragging.original.h + dy));
+        }
+      } else if (editorDragging.mode === "resizeCampRadius" && tool === "camp") {
+        ref.radius = Math.max(40, Math.round(dist(world.x, world.y, ref.x, ref.y)));
+      } else {
+        ref.x = Math.round(editorDragging.original.x + dx);
+        ref.y = Math.round(editorDragging.original.y + dy);
+      }
+
+      if (tool === "wall") {
+        currentLevel.obstacles = buildObstacles(currentLevel);
+      }
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      editorMouseDown = false;
+      editorDragging = null;
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+      editorMouseDown = false;
+      editorDragging = null;
+    });
+
+    editorToggle.addEventListener("click", () => setEditorMode(!editorMode));
+    editorDelete.addEventListener("click", deleteSelectedEditorObject);
+    editorExport.addEventListener("click", exportCurrentLevelData);
+    editorLevelSelect.addEventListener("change", () => {
+      const nextIndex = clamp(parseInt(editorLevelSelect.value, 10) || 0, 0, LEVELS.length - 1);
+      loadLevel(nextIndex);
+    });
+
+    for (const tool of Object.keys(editorTools)) {
+      editorTools[tool].addEventListener("click", () => setEditorTool(tool));
+    }
+
+    refreshEditorLevelDropdown();
+
+    function drawEditorOverlay() {
+      if (!editorMode || !currentLevel) return;
+
+      ctx.save();
+      ctx.translate(-camera.x, -camera.y);
+
+      ctx.strokeStyle = "rgba(80,180,255,0.18)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= currentLevel.mapW; x += 80) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, currentLevel.mapH);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= currentLevel.mapH; y += 80) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(currentLevel.mapW, y);
+        ctx.stroke();
+      }
+
+      if (selectedEditorObject) {
+        const { tool, ref } = selectedEditorObject;
+        ctx.strokeStyle = "#00f0ff";
+        ctx.lineWidth = 4;
+
+        if (tool === "portal" || tool === "playerStart") {
+          ctx.beginPath();
+          ctx.arc(ref.x, ref.y, (tool === "portal" ? ref.radius : 12) + 8, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (tool === "camp") {
+          ctx.beginPath();
+          ctx.arc(ref.x, ref.y, ref.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ref.x, ref.y, 10, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (tool === "decoration") {
+          ctx.beginPath();
+          ctx.arc(ref.x, ref.y, Math.max(12, (ref.r || 8) + 6), 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(ref.x - 2, ref.y - 2, ref.w + 4, ref.h + 4);
+        }
+      }
+
+      ctx.restore();
     }
 
     function obstacleBlocksMovement(o, entity) {
-      if (o.type === "bridge") return false;
-
       if (o.type === "slime") {
         for (const b of currentLevel.bridges) {
-          const withinBridge = entity.x > b.x && entity.x < b.x + b.w && entity.y > b.y && entity.y < b.y + b.h;
-          if (withinBridge) return false;
+          if (entity.x > b.x && entity.x < b.x + b.w && entity.y > b.y && entity.y < b.y + b.h) {
+            return false;
+          }
         }
         return true;
       }
-
-      return o.solid;
+      return true;
     }
 
-    function resolveMapCollisions(entity) {
-      entity.x = clamp(entity.x, entity.radius, currentLevel.mapW - entity.radius);
-      entity.y = clamp(entity.y, entity.radius, currentLevel.mapH - entity.radius);
+    function updatePlayer() {
+      let dx = 0;
+      let dy = 0;
+
+      if (keys["w"] || keys["arrowup"]) dy -= 1;
+      if (keys["s"] || keys["arrowdown"]) dy += 1;
+      if (keys["a"] || keys["arrowleft"]) dx -= 1;
+      if (keys["d"] || keys["arrowright"]) dx += 1;
+
+      const len = Math.hypot(dx, dy);
+      if (len > 0) {
+        dx /= len;
+        dy /= len;
+      }
+
+      player.x += dx * player.speed;
+      player.y += dy * player.speed;
+
+      player.x = clamp(player.x, player.radius, currentLevel.mapW - player.radius);
+      player.y = clamp(player.y, player.radius, currentLevel.mapH - player.radius);
 
       for (const o of currentLevel.obstacles) {
-        if (!obstacleBlocksMovement(o, entity)) continue;
-        if (circleRectOverlap(entity.x, entity.y, entity.radius, o.x, o.y, o.w, o.h)) {
-          resolveCircleRectCollision(entity, o);
-        }
+        if (!obstacleBlocksMovement(o, player)) continue;
+        resolveCircleRectCollision(player, o);
+      }
+
+      if (player.contactDamageCooldown > 0) {
+        player.contactDamageCooldown--;
+      }
+
+      attackTimer++;
+      if (attackTimer >= player.attackCooldown) {
+        attackTimer = 0;
+        if (player.classType === "sword") swordAttack();
+        else shootAttack();
       }
     }
 
-    function nearestEnemyInRange(range) {
+    function swordAttack() {
       let best = null;
       let bestD = Infinity;
+
       for (const e of enemies) {
+        if (e.hp <= 0) continue;
         const d = dist(player.x, player.y, e.x, e.y);
-        if (d < range && d < bestD) {
+        if (d < player.range + player.swordRangeBonus && d < bestD) {
           best = e;
           bestD = d;
         }
       }
-      return best;
-    }
 
-    function damageEnemy(enemy, amount) {
-      enemy.hp -= amount;
-      addDamageText(enemy.x, enemy.y - 24, amount, false);
-      if (enemy.hp <= 0) {
-        const gain = Math.floor(randomBetween(currentLevel.moneyDrop[0], currentLevel.moneyDrop[1]));
-        coins.push({
-          x: enemy.x,
-          y: enemy.y,
-          value: gain,
-          radius: 8
-        });
-        addEffect("coin", enemy.x, enemy.y, 16);
+      if (!best) return;
+
+      const dmg = player.power;
+      best.hp -= dmg;
+      best.hitFlash = 3;
+      best.aggro = true;
+      damageTexts.push({ x: best.x, y: best.y - 24, text: `-${Math.round(dmg)}`, life: 28, hurt: true });
+
+      effects.push({
+        type: "swing",
+        x: player.x,
+        y: player.y,
+        radius: player.range + player.swordRangeBonus,
+        life: 8
+      });
+
+      if (best.hp <= 0) {
+        enemyKilled(best);
       }
     }
 
-    function tryPlayerAttack() {
-      attackTimer++;
-      const ready = attackTimer >= player.attackCooldown;
-      if (!ready) return;
-      attackTimer = 0;
-      attackRequested = false;
+    function shootAttack() {
+      const targets = enemies
+        .filter(e => e.hp > 0)
+        .map(e => ({ e, d: dist(player.x, player.y, e.x, e.y) }))
+        .filter(item => item.d <= player.range)
+        .sort((a, b) => a.d - b.d)
+        .slice(0, player.projectileCount);
 
-      const target = nearestEnemyInRange(player.attackRange);
-      if (!target) return;
-
-      if (player.attackStyle === "melee") {
-        damageEnemy(target, player.damage);
-        addEffect("swing", target.x, target.y, 8, { radius: 34 });
-      } else {
-        const dir = normalize(target.x - player.x, target.y - player.y);
+      for (const item of targets) {
+        const e = item.e;
+        const angle = Math.atan2(e.y - player.y, e.x - player.x);
         projectiles.push({
           x: player.x,
           y: player.y,
-          vx: dir.x * player.projectileSpeed,
-          vy: dir.y * player.projectileSpeed,
-          damage: player.damage,
-          life: 80,
-          size: 5
+          vx: Math.cos(angle) * player.projectileSpeed,
+          vy: Math.sin(angle) * player.projectileSpeed,
+          damage: player.power,
+          size: player.projectileSize,
+          life: 90
         });
       }
     }
 
-    function updatePlayer() {
-      const input = getMovementInput();
-      player.x += input.x * player.speed;
-      player.y += input.y * player.speed;
+    function enemyKilled(enemy) {
+      enemy.hp = 0;
+      coins.push({
+        x: enemy.x,
+        y: enemy.y,
+        value: enemy.money,
+        radius: 8,
+        vx: rand(-1, 1),
+        vy: rand(-1.5, -0.3),
+        life: 600
+      });
 
-      resolveMapCollisions(player);
-      tryPlayerAttack();
-    }
+      effects.push({ type: "coin", x: enemy.x, y: enemy.y, life: 16 });
 
-    function enemyCanSeePlayer(enemy) {
-      const d = dist(enemy.x, enemy.y, player.x, player.y);
-      if (d <= enemy.aggroRadius) return true;
-      return false;
-    }
-
-    function moveEnemy(enemy) {
-      const targetX = enemy.aggro ? player.x : enemy.spawnX;
-      const targetY = enemy.aggro ? player.y : enemy.spawnY;
-      const dir = normalize(targetX - enemy.x, targetY - enemy.y);
-
-      enemy.x += dir.x * enemy.speed;
-      enemy.y += dir.y * enemy.speed;
-
-      resolveMapCollisions(enemy);
-    }
-
-    function enemyAttackPlayer(enemy) {
-      enemy.attackTimer++;
-      if (enemy.attackTimer < enemy.attackCooldown) return;
-
-      const d = dist(enemy.x, enemy.y, player.x, player.y);
-      if (d <= enemy.radius + player.radius + 8) {
-        enemy.attackTimer = 0;
-        const raw = enemy.damage;
-        const taken = Math.max(1, raw * (1 - player.armor));
-        player.hp -= taken;
-        addDamageText(player.x, player.y - 28, taken, true);
+      const alive = enemies.filter(e => e.hp > 0).length;
+      if (alive <= 0) {
+        currentLevel.portal.open = true;
       }
     }
 
     function updateEnemies() {
       for (const enemy of enemies) {
-        enemy.aggro = enemyCanSeePlayer(enemy);
-        moveEnemy(enemy);
-        enemyAttackPlayer(enemy);
-      }
+        if (enemy.hp <= 0) continue;
 
-      enemies = enemies.filter(e => e.hp > 0);
+        if (enemy.hitFlash > 0) enemy.hitFlash--;
 
-      if (enemies.length === 0) {
-        currentLevel.portal.open = true;
+        const dToPlayer = dist(enemy.x, enemy.y, player.x, player.y);
+
+        if (!enemy.aggro && dToPlayer < enemy.aggroRange) {
+          enemy.aggro = true;
+        }
+
+        if (enemy.aggro) {
+          if (dToPlayer > enemy.leashRange && dist(enemy.x, enemy.y, enemy.campX, enemy.campY) > enemy.campRadius + 90) {
+            enemy.aggro = false;
+          }
+        }
+
+        let tx = enemy.homeX;
+        let ty = enemy.homeY;
+
+        if (enemy.aggro) {
+          tx = player.x;
+          ty = player.y;
+        } else {
+          if (dist(enemy.x, enemy.y, enemy.homeX, enemy.homeY) < 8) {
+            enemy.homeX = enemy.campX + rand(-enemy.campRadius * 0.5, enemy.campRadius * 0.5);
+            enemy.homeY = enemy.campY + rand(-enemy.campRadius * 0.5, enemy.campRadius * 0.5);
+          }
+          tx = enemy.homeX;
+          ty = enemy.homeY;
+        }
+
+        let dx = tx - enemy.x;
+        let dy = ty - enemy.y;
+        const len = Math.hypot(dx, dy);
+        if (len > 0) {
+          dx /= len;
+          dy /= len;
+          enemy.x += dx * enemy.speed;
+          enemy.y += dy * enemy.speed;
+        }
+
+        enemy.x = clamp(enemy.x, enemy.radius, currentLevel.mapW - enemy.radius);
+        enemy.y = clamp(enemy.y, enemy.radius, currentLevel.mapH - enemy.radius);
+
+        for (const o of currentLevel.obstacles) {
+          if (!obstacleBlocksMovement(o, enemy)) continue;
+          resolveCircleRectCollision(enemy, o);
+        }
+
+        const hitPlayer = dist(enemy.x, enemy.y, player.x, player.y) < enemy.radius + player.radius;
+        if (hitPlayer && player.contactDamageCooldown === 0) {
+          const dmg = enemy.damage * (1 - player.armor);
+          player.hp -= dmg;
+          player.contactDamageCooldown = 18;
+          damageTexts.push({ x: player.x, y: player.y - 26, text: `-${Math.round(dmg)}`, life: 28, hurt: true });
+        }
       }
     }
 
     function updateDestructibles() {
       for (const d of destructibles) {
         if (d.dead) continue;
-
         if (d.hitFlash > 0) d.hitFlash--;
 
-        if (player.attackStyle === "melee") {
-          const inRange = dist(player.x, player.y, d.x, d.y) <= player.attackRange + d.radius * 0.4;
-          if (inRange && attackTimer === 1) {
-            d.hp -= player.damage * 0.8;
+        if (player.classType === "sword") {
+          const range = player.range * 0.6;
+          if (dist(player.x, player.y, d.x, d.y) <= range + d.radius) {
+            if (attackTimer === 0) {
+              d.hp -= player.power * 0.7;
+              d.hitFlash = 3;
+              if (d.hp <= 0) {
+                d.dead = true;
+                player.money += d.reward;
+                effects.push({ type: "break", x: d.x, y: d.y, life: 20 });
+              }
+            }
+          }
+        }
+
+        for (const p of projectiles) {
+          if (p.life <= 0) continue;
+          if (dist(p.x, p.y, d.x, d.y) <= d.radius + p.size) {
+            d.hp -= p.damage * 0.55;
             d.hitFlash = 3;
-            addDamageText(d.x, d.y - 18, player.damage * 0.8, false);
+            p.life = 0;
             if (d.hp <= 0) {
               d.dead = true;
-              const gain = Math.floor(randomBetween(12, 22));
-              coins.push({ x: d.x, y: d.y, value: gain, radius: 8 });
-              addEffect("break", d.x, d.y, 20);
+              player.money += d.reward;
+              effects.push({ type: "break", x: d.x, y: d.y, life: 20 });
             }
           }
         }
@@ -1834,70 +1492,64 @@
     }
 
     function updateProjectiles() {
-      const alive = [];
-
       for (const p of projectiles) {
+        if (p.life <= 0) continue;
         p.x += p.vx;
         p.y += p.vy;
         p.life--;
 
-        let hit = false;
+        if (p.x < 0 || p.y < 0 || p.x > currentLevel.mapW || p.y > currentLevel.mapH) {
+          p.life = 0;
+          continue;
+        }
 
-        for (const enemy of enemies) {
-          if (dist(p.x, p.y, enemy.x, enemy.y) < p.size + enemy.radius) {
-            damageEnemy(enemy, p.damage);
-            hit = true;
+        let blocked = false;
+        for (const o of currentLevel.obstacles) {
+          if (o.type === "slime") continue;
+          if (p.x > o.x && p.x < o.x + o.w && p.y > o.y && p.y < o.y + o.h) {
+            blocked = true;
             break;
           }
         }
-
-        if (!hit) {
-          for (const d of destructibles) {
-            if (d.dead) continue;
-            if (dist(p.x, p.y, d.x, d.y) <= p.size + d.radius) {
-              d.hp -= p.damage * 0.7;
-              d.hitFlash = 3;
-              addDamageText(d.x, d.y - 16, p.damage * 0.7, false);
-              if (d.hp <= 0) {
-                d.dead = true;
-                const gain = Math.floor(randomBetween(12, 22));
-                coins.push({ x: d.x, y: d.y, value: gain, radius: 8 });
-                addEffect("break", d.x, d.y, 20);
-              }
-              hit = true;
-              break;
-            }
-          }
+        if (blocked) {
+          p.life = 0;
+          continue;
         }
 
-        if (!hit) {
-          for (const o of currentLevel.obstacles) {
-            if (!obstacleBlocksMovement(o, p)) continue;
-            if (circleRectOverlap(p.x, p.y, p.size, o.x, o.y, o.w, o.h)) {
-              hit = true;
-              break;
-            }
+        for (const enemy of enemies) {
+          if (enemy.hp <= 0) continue;
+          if (dist(p.x, p.y, enemy.x, enemy.y) <= enemy.radius + p.size) {
+            enemy.hp -= p.damage;
+            enemy.hitFlash = 3;
+            enemy.aggro = true;
+            damageTexts.push({ x: enemy.x, y: enemy.y - 22, text: `-${Math.round(p.damage)}`, life: 28, hurt: true });
+            p.life = 0;
+            if (enemy.hp <= 0) enemyKilled(enemy);
+            break;
           }
         }
-
-        if (!hit && p.life > 0) alive.push(p);
       }
 
-      projectiles = alive;
+      projectiles = projectiles.filter(p => p.life > 0);
     }
 
     function updateCoins() {
-      const keep = [];
       for (const c of coins) {
-        const d = dist(c.x, c.y, player.x, player.y);
-        if (d < player.radius + c.radius + 4) {
+        c.vy += 0.08;
+        c.x += c.vx;
+        c.y += c.vy;
+        c.life--;
+
+        c.vx *= 0.98;
+        c.vy *= 0.98;
+
+        if (dist(c.x, c.y, player.x, player.y) < player.radius + c.radius + 4) {
           player.money += c.value;
-          addEffect("coin", c.x, c.y, 14);
-        } else {
-          keep.push(c);
+          c.life = 0;
         }
       }
-      coins = keep;
+
+      coins = coins.filter(c => c.life > 0);
     }
 
     function updateEffects() {
@@ -1913,173 +1565,381 @@
       damageTexts = damageTexts.filter(t => t.life > 0);
     }
 
-    function pointInRect(px, py, rx, ry, rw, rh) {
-      return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
+    const UPGRADES = [
+      {
+        id: "hp",
+        name: "+20 Max HP",
+        cost: 80,
+        desc: "Increase survivability with more max health.",
+        apply() {
+          player.maxHp += 20;
+          player.hp += 20;
+        }
+      },
+      {
+        id: "power",
+        name: "+6 Damage",
+        cost: 90,
+        desc: "Increase base attack damage.",
+        apply() {
+          player.power += 6;
+        }
+      },
+      {
+        id: "speed",
+        name: "+0.25 Move Speed",
+        cost: 75,
+        desc: "Move faster around large levels.",
+        apply() {
+          player.speed += 0.25;
+        }
+      },
+      {
+        id: "armor",
+        name: "+6% Armor",
+        cost: 110,
+        desc: "Reduce incoming damage from enemies.",
+        apply() {
+          player.armor = clamp(player.armor + 0.06, 0, 0.65);
+        }
+      },
+      {
+        id: "attack",
+        name: "Faster Attacks",
+        cost: 120,
+        desc: "Lower attack cooldown.",
+        apply() {
+          player.attackCooldown = Math.max(8, player.attackCooldown - 2);
+        }
+      },
+      {
+        id: "projectile",
+        name: "Shooter: +1 Projectile",
+        cost: 150,
+        desc: "Shooter class only.",
+        apply() {
+          if (player.classType === "shooter") {
+            player.projectileCount = Math.min(4, player.projectileCount + 1);
+          }
+        }
+      },
+      {
+        id: "swordRange",
+        name: "Sword: +18 Slash Range",
+        cost: 140,
+        desc: "Sword class only.",
+        apply() {
+          if (player.classType === "sword") {
+            player.swordRangeBonus += 18;
+          }
+        }
+      }
+    ];
+
+    function openStore() {
+      pausedForStore = true;
+      running = false;
+      storeScreen.classList.remove("hidden");
+      populateStore();
     }
 
+    function populateStore() {
+      storeMoneyText.textContent = String(Math.floor(player.money));
+      storeGrid.innerHTML = "";
+
+      for (const up of UPGRADES) {
+        const card = document.createElement("div");
+        card.className = "store-card";
+        const title = document.createElement("h3");
+        title.textContent = `${up.name} ($${up.cost})`;
+        const desc = document.createElement("p");
+        desc.textContent = up.desc;
+
+        const buyBtn = document.createElement("button");
+        buyBtn.textContent = "Buy";
+        buyBtn.className = "secondary";
+        buyBtn.disabled = player.money < up.cost;
+        buyBtn.style.opacity = buyBtn.disabled ? "0.5" : "1";
+        buyBtn.addEventListener("click", () => {
+          if (player.money < up.cost) return;
+          player.money -= up.cost;
+          up.apply();
+          populateStore();
+          updateHud();
+        });
+
+        card.appendChild(title);
+        card.appendChild(desc);
+        card.appendChild(buyBtn);
+        storeGrid.appendChild(card);
+      }
+    }
+
+    continueBtn.addEventListener("click", () => {
+      storeScreen.classList.add("hidden");
+      pausedForStore = false;
+
+      if (currentLevelIndex >= LEVELS.length - 1) {
+        running = false;
+        winText.textContent = `Final Stats — HP: ${Math.round(player.hp)} / ${player.maxHp}, Money: $${Math.round(player.money)}.`;
+        winScreen.classList.remove("hidden");
+        return;
+      }
+
+      currentLevelIndex++;
+      loadLevel(currentLevelIndex);
+      running = true;
+      loop();
+    });
+
     function updatePortalAndStore() {
-      const inStoreZone = pointInRect(player.x, player.y, currentLevel.storeZone.x, currentLevel.storeZone.y, currentLevel.storeZone.w, currentLevel.storeZone.h);
+      const aliveEnemies = enemies.filter(e => e.hp > 0).length;
+      if (aliveEnemies <= 0) {
+        currentLevel.portal.open = true;
+      }
+
+      const inStoreZone =
+        player.x > currentLevel.storeZone.x &&
+        player.x < currentLevel.storeZone.x + currentLevel.storeZone.w &&
+        player.y > currentLevel.storeZone.y &&
+        player.y < currentLevel.storeZone.y + currentLevel.storeZone.h;
 
       if (currentLevel.portal.open && inStoreZone && !pausedForStore) {
         openStore();
       }
     }
 
-    function worldToScreen(x, y) {
-      return { x: x - camera.x, y: y - camera.y };
+    function endGame() {
+      running = false;
+      pausedForStore = false;
+      gameOverText.textContent = `You reached level ${currentLevelIndex + 1}.`;
+      gameOverScreen.classList.remove("hidden");
     }
 
-    function screenToWorld(x, y) {
-      return { x: x + camera.x, y: y + camera.y };
+    function updateHud() {
+      hpText.textContent = `${Math.max(0, Math.round(player.hp))} / ${player.maxHp}`;
+      hpBar.style.width = `${clamp((player.hp / player.maxHp) * 100, 0, 100)}%`;
+      moneyText.textContent = String(Math.floor(player.money));
+      powerText.textContent = String(Math.round(player.power));
+      attackText.textContent = `${(60 / player.attackCooldown).toFixed(2)} /s`;
+      speedText.textContent = player.speed.toFixed(2);
+      armorText.textContent = `${Math.round(player.armor * 100)}%`;
+
+      levelText.textContent = String(currentLevelIndex + 1);
+      areaText.textContent = currentLevel.name;
+      enemiesText.textContent = String(enemies.filter(e => e.hp > 0).length);
+      portalText.textContent = currentLevel.portal.open ? "Open" : "Locked";
     }
 
     function drawWorldBackground() {
-      if (!terrainTexture) return;
-      ctx.fillStyle = terrainTexture;
+      ctx.fillStyle = terrainTexture || currentLevel.bg;
       ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
 
-      const grad = ctx.createLinearGradient(0, 0, currentLevel.mapW, currentLevel.mapH);
-      grad.addColorStop(0, "rgba(255,255,255,0.03)");
-      grad.addColorStop(1, "rgba(0,0,0,0.08)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
-
-      for (const deco of currentLevel.decorationsData) {
-        if (deco.type === "bush") {
-          ctx.fillStyle = shadeColor(currentLevel.accent, -25);
-          ctx.beginPath();
-          ctx.arc(deco.x, deco.y, deco.r, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (deco.type === "crystal") {
-          ctx.fillStyle = shadeColor(currentLevel.accent, 15);
-          ctx.beginPath();
-          ctx.moveTo(deco.x, deco.y - deco.r);
-          ctx.lineTo(deco.x + deco.r * 0.6, deco.y + deco.r * 0.7);
-          ctx.lineTo(deco.x - deco.r * 0.6, deco.y + deco.r * 0.7);
-          ctx.closePath();
-          ctx.fill();
-        } else if (deco.type === "ruin") {
-          ctx.fillStyle = "rgba(210,190,170,0.5)";
-          ctx.fillRect(deco.x - deco.r, deco.y - deco.r * 0.5, deco.r * 2, deco.r);
-        }
+      const stripeCount = Math.ceil(currentLevel.mapW / 180);
+      ctx.globalAlpha = 0.06;
+      for (let i = 0; i < stripeCount; i++) {
+        ctx.fillStyle = i % 2 ? currentLevel.ground2 : currentLevel.accent;
+        ctx.fillRect(i * 180, 0, 90, currentLevel.mapH);
       }
+      ctx.globalAlpha = 1;
     }
 
-    function drawObstacles() {
-      for (const o of currentLevel.obstacles) {
-        if (o.type === "bridge") {
-          ctx.fillStyle = currentLevel.bridgeColor;
-          ctx.fillRect(o.x, o.y, o.w, o.h);
-          ctx.strokeStyle = shadeColor(currentLevel.bridgeColor, -30);
+    function drawDecorations() {
+      for (const d of currentLevel.decor) {
+        if (d.kind === "stone") {
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(0,0,0,0.2)";
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(d.x - d.r * 0.25, d.y - d.r * 0.2, d.r * 0.7, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255,255,255,0.07)";
+          ctx.fill();
+        } else if (d.kind === "plant") {
+          ctx.strokeStyle = shadeColor(currentLevel.accent, -30);
           ctx.lineWidth = 2;
-          for (let x = o.x + 8; x < o.x + o.w; x += 14) {
-            ctx.beginPath();
-            ctx.moveTo(x, o.y);
-            ctx.lineTo(x, o.y + o.h);
-            ctx.stroke();
-          }
-          continue;
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y + d.r);
+          ctx.lineTo(d.x - d.r * 0.6, d.y - d.r * 0.7);
+          ctx.moveTo(d.x, d.y + d.r * 0.9);
+          ctx.lineTo(d.x + d.r * 0.6, d.y - d.r * 0.6);
+          ctx.stroke();
+        } else if (d.kind === "ruin") {
+          ctx.fillStyle = "rgba(40,30,20,0.45)";
+          ctx.fillRect(d.x - d.r, d.y - d.r * 0.8, d.r * 2, d.r * 1.6);
+          ctx.fillStyle = "rgba(120,90,70,0.25)";
+          ctx.fillRect(d.x - d.r * 0.5, d.y - d.r * 0.4, d.r, d.r * 0.8);
         }
-
-        if (o.type === "slime") {
-          ctx.fillStyle = currentLevel.slimeColor;
-        } else if (o.type === "pillar") {
-          ctx.fillStyle = shadeColor(currentLevel.obstacleColor, 20);
-        } else if (o.type === "caveWall") {
-          ctx.fillStyle = shadeColor(currentLevel.obstacleColor, -15);
-        } else {
-          ctx.fillStyle = currentLevel.obstacleColor;
-        }
-
-        ctx.fillRect(o.x, o.y, o.w, o.h);
-
-        ctx.strokeStyle = "rgba(0,0,0,0.28)";
-        ctx.strokeRect(o.x, o.y, o.w, o.h);
       }
     }
 
     function drawCampMarkers() {
-      for (const camp of currentLevel.camps) {
-        ctx.strokeStyle = "rgba(255,255,255,0.08)";
-        ctx.lineWidth = 2;
+      for (const c of currentLevel.camps) {
         ctx.beginPath();
-        ctx.arc(camp.x, camp.y, camp.radius, 0, Math.PI * 2);
+        ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,100,100,0.22)";
+        ctx.lineWidth = 2;
         ctx.stroke();
+      }
+    }
+
+    function drawObstacles() {
+      drawDecorations();
+
+      for (const o of currentLevel.obstacles) {
+        if (o.type === "rock") {
+          const grd = ctx.createLinearGradient(o.x, o.y, o.x + o.w, o.y + o.h);
+          grd.addColorStop(0, shadeColor(currentLevel.obstacleColor, 12));
+          grd.addColorStop(1, shadeColor(currentLevel.obstacleColor, -12));
+          ctx.fillStyle = grd;
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+
+          ctx.strokeStyle = "rgba(255,255,255,0.1)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(o.x + 2, o.y + 2, o.w - 4, o.h - 4);
+        } else if (o.type === "caveWall") {
+          ctx.fillStyle = shadeColor(currentLevel.obstacleColor, -8);
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+
+          ctx.strokeStyle = "rgba(255,255,255,0.06)";
+          ctx.lineWidth = 3;
+          for (let y = o.y + 12; y < o.y + o.h; y += 22) {
+            ctx.beginPath();
+            ctx.moveTo(o.x + 6, y);
+            ctx.lineTo(o.x + o.w - 6, y + rand(-2, 2));
+            ctx.stroke();
+          }
+        } else if (o.type === "pillar") {
+          ctx.fillStyle = shadeColor(currentLevel.obstacleColor, 8);
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.strokeStyle = "rgba(0,0,0,0.25)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(o.x, o.y, o.w, o.h);
+        } else if (o.type === "slime") {
+          ctx.fillStyle = `${currentLevel.slimeColor}b0`;
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+
+          ctx.globalAlpha = 0.26;
+          ctx.fillStyle = "#fff";
+          for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.arc(
+              o.x + (i + 0.5) * (o.w / 5) + Math.sin(frameCount * 0.04 + i) * 4,
+              o.y + o.h * (0.35 + 0.2 * Math.sin(frameCount * 0.03 + i)),
+              8 + Math.sin(frameCount * 0.06 + i) * 2,
+              0,
+              Math.PI * 2
+            );
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      for (const b of currentLevel.bridges) {
+        const grd = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
+        grd.addColorStop(0, shadeColor(currentLevel.bridgeColor, 18));
+        grd.addColorStop(1, shadeColor(currentLevel.bridgeColor, -16));
+        ctx.fillStyle = grd;
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+
+        ctx.strokeStyle = "rgba(40,20,0,0.35)";
+        for (let x = b.x + 8; x < b.x + b.w; x += 20) {
+          ctx.beginPath();
+          ctx.moveTo(x, b.y);
+          ctx.lineTo(x, b.y + b.h);
+          ctx.stroke();
+        }
       }
     }
 
     function drawStoreZone() {
       const z = currentLevel.storeZone;
-      ctx.fillStyle = "rgba(79, 208, 255, 0.08)";
+      ctx.fillStyle = "rgba(100, 180, 255, 0.12)";
       ctx.fillRect(z.x, z.y, z.w, z.h);
-      ctx.strokeStyle = "rgba(79, 208, 255, 0.35)";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(120, 200, 255, 0.55)";
+      ctx.lineWidth = 3;
       ctx.strokeRect(z.x, z.y, z.w, z.h);
 
-      ctx.fillStyle = "rgba(220,240,255,0.85)";
-      ctx.font = "bold 20px Arial";
+      ctx.fillStyle = "#dfefff";
+      ctx.font = "bold 18px Arial";
       ctx.textAlign = "center";
-      ctx.fillText("Store Zone", z.x + z.w / 2, z.y + z.h / 2 + 8);
+      ctx.fillText("STORE", z.x + z.w / 2, z.y - 10);
+
+      const k = currentLevel.shopKeeper;
+      ctx.beginPath();
+      ctx.arc(k.x, k.y, 14, 0, Math.PI * 2);
+      ctx.fillStyle = "#f4d5a1";
+      ctx.fill();
+
+      ctx.fillStyle = "#35495e";
+      ctx.fillRect(k.x - 12, k.y + 10, 24, 22);
     }
 
     function drawPortal() {
       const p = currentLevel.portal;
-      const pulse = Math.sin(frameCount * 0.06) * 4;
+      const pulse = Math.sin(frameCount * 0.08) * 3;
 
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius + 18 + pulse, 0, Math.PI * 2);
-      ctx.fillStyle = currentLevel.portal.open ? "rgba(102, 230, 153, 0.22)" : "rgba(220, 220, 220, 0.12)";
+      ctx.arc(p.x, p.y, p.radius + 10 + pulse, 0, Math.PI * 2);
+      ctx.fillStyle = p.open ? "rgba(140, 255, 180, 0.25)" : "rgba(180, 180, 200, 0.14)";
       ctx.fill();
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.radius + pulse, 0, Math.PI * 2);
-      ctx.fillStyle = currentLevel.portal.open ? "rgba(96, 255, 158, 0.65)" : "rgba(200,200,200,0.45)";
+      ctx.fillStyle = p.open ? "#7affb7" : "#8a8fa2";
       ctx.fill();
 
-      ctx.strokeStyle = currentLevel.portal.open ? "#66e699" : "#bfbfbf";
-      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius + pulse, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 16px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText(currentLevel.portal.open ? "OPEN" : "LOCKED", p.x, p.y + 6);
+      ctx.arc(p.x, p.y, p.radius - 13, 0, Math.PI * 2);
+      ctx.fillStyle = p.open ? "#1f6f4f" : "#4a4d5e";
+      ctx.fill();
     }
 
     function drawPlayer() {
-      const bodyColor = player.classType === "sword" ? "#4fc3f7" : "#c792ff";
-      ctx.fillStyle = bodyColor;
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(255,255,255,0.35)";
-      ctx.beginPath();
-      ctx.arc(player.x - 6, player.y - 6, player.radius * 0.3, 0, Math.PI * 2);
-      ctx.fill();
-
-      const dir = getMovementInput();
-      const facingX = dir.x || 1;
-      const facingY = dir.y || 0;
-
-      if (player.attackStyle === "melee") {
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 4;
+      ctx.save();
+      if (player.classType === "sword") {
         ctx.beginPath();
-        ctx.moveTo(player.x + facingX * 10, player.y + facingY * 10);
-        ctx.lineTo(player.x + facingX * 24, player.y + facingY * 24);
+        ctx.arc(player.x, player.y, player.radius + 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#59c4ff";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(player.x - 6, player.y - 4, 2, 0, Math.PI * 2);
+        ctx.arc(player.x + 6, player.y - 4, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+
+        ctx.strokeStyle = "#cfefff";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(player.x + 8, player.y + 5);
+        ctx.lineTo(player.x + 16, player.y + 16);
         ctx.stroke();
       } else {
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius + 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffd65c";
+        ctx.fill();
+
         ctx.fillStyle = "#fff";
-        ctx.fillRect(player.x + facingX * 14 - 3, player.y + facingY * 14 - 3, 6, 6);
+        ctx.beginPath();
+        ctx.arc(player.x - 5, player.y - 4, 2, 0, Math.PI * 2);
+        ctx.arc(player.x + 5, player.y - 4, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#334";
+        ctx.fillRect(player.x + 10, player.y - 3, 10, 6);
       }
+      ctx.restore();
     }
 
     function drawEnemies() {
       for (const enemy of enemies) {
-        const baseColor = enemy.aggro ? "#ff5e4f" : enemy.color;
+        if (enemy.hp <= 0) continue;
+
+        const baseColor = enemy.hitFlash > 0 ? "#fff" : "#d96c5f";
+
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.radius + 2, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(0,0,0,0.2)";
@@ -2231,16 +2091,6 @@
       }
     }
 
-    function drawEditorOverlay() {
-      if (!editorMode || !currentLevel) return;
-      ctx.textAlign = "left";
-      ctx.font = "bold 14px Arial";
-      ctx.fillStyle = "rgba(0,0,0,0.45)";
-      ctx.fillRect(camera.x + 12, camera.y + 12, 260, 34);
-      ctx.fillStyle = "#fff";
-      ctx.fillText(`Editor active: ${activeEditorTool}`, camera.x + 22, camera.y + 34);
-    }
-
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -2291,13 +2141,6 @@
         endGame();
       }
     }
-
-
-    setEditorMode(false);
-    updateEditorToolStyles();
-    refreshEditorLevelDropdown();
-    bindUiEvents();
-
 
     function loop() {
       if (!running || pausedForStore) return;
