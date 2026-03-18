@@ -267,6 +267,68 @@
       pointer-events: auto;
     }
 
+    #touchControls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 32;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 10px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      pointer-events: none;
+    }
+
+    #touchMovePad,
+    #touchAttackBtn {
+      pointer-events: auto;
+    }
+
+    #touchMovePad {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.26);
+      background: rgba(0,0,0,0.35);
+      position: relative;
+      touch-action: none;
+    }
+
+    #touchMoveKnob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 54px;
+      height: 54px;
+      margin-left: -27px;
+      margin-top: -27px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.28);
+      border: 2px solid rgba(255,255,255,0.45);
+    }
+
+    #touchAttackBtn {
+      min-height: 64px;
+      min-width: 92px;
+      border-radius: 999px;
+      background: rgba(200, 56, 56, 0.88);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+      font-size: 17px;
+      padding: 10px 18px;
+      touch-action: manipulation;
+    }
+
+    #touchAttackBtn:active {
+      transform: scale(0.98);
+      opacity: 1;
+    }
+
+    #touchControls.visible {
+      display: flex;
+    }
+
     @media (max-width: 900px) {
       .overlay {
         padding: 12px;
@@ -346,19 +408,48 @@
       }
 
       #hud {
+        top: 6px;
         gap: 6px;
       }
 
       .hud-box {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+        padding: 7px 8px;
+        font-size: 12px;
+      }
+
+      .bar-wrap {
+        margin-top: 4px;
+        height: 12px;
+      }
+
+      #hud .hud-box:last-child {
         flex-basis: 100%;
-        font-size: 13px;
+      }
+
+      #editorToggle {
+        min-height: 34px;
+        padding: 6px 10px;
+        font-size: 12px;
       }
 
       #editorPanel {
         width: calc(100vw - 16px);
         width: calc(100dvw - 16px);
-        max-height: min(62vh, calc(100vh - 84px));
-        max-height: min(62dvh, calc(100dvh - 84px));
+        max-height: min(46vh, calc(100vh - 120px));
+        max-height: min(46dvh, calc(100dvh - 120px));
+        padding: 8px;
+        font-size: 12px;
+      }
+
+      .editor-tool {
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+
+      .editor-input {
+        min-height: 88px;
       }
 
       #storeScreen .store-top {
@@ -367,6 +458,29 @@
 
       #storeScreen .store-top > div:last-child {
         font-size: 18px !important;
+      }
+
+      #touchControls {
+        padding: 8px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      }
+
+      #touchMovePad {
+        width: 108px;
+        height: 108px;
+      }
+
+      #touchMoveKnob {
+        width: 50px;
+        height: 50px;
+        margin-left: -25px;
+        margin-top: -25px;
+      }
+
+      #touchAttackBtn {
+        min-height: 56px;
+        min-width: 82px;
+        font-size: 15px;
       }
     }
 
@@ -474,6 +588,13 @@
     <textarea id="editorOutput" class="editor-input" placeholder="Exported level data appears here"></textarea>
   </div>
 
+  <div id="touchControls" aria-hidden="true">
+    <div id="touchMovePad">
+      <div id="touchMoveKnob"></div>
+    </div>
+    <button id="touchAttackBtn" type="button">Attack</button>
+  </div>
+
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -494,6 +615,10 @@
     const editorDelete = document.getElementById("editorDelete");
     const editorExport = document.getElementById("editorExport");
     const editorLevelSelect = document.getElementById("editorLevelSelect");
+    const touchControls = document.getElementById("touchControls");
+    const touchMovePad = document.getElementById("touchMovePad");
+    const touchMoveKnob = document.getElementById("touchMoveKnob");
+    const touchAttackBtn = document.getElementById("touchAttackBtn");
 
     const editorTools = {
       wall: document.getElementById("toolWall"),
@@ -626,6 +751,10 @@
     let selectedEditorObject = null;
     let editorMouseDown = false;
     let editorDragging = null;
+    let touchMovePointerId = null;
+    let touchMoveActive = false;
+    let touchMoveVector = { x: 0, y: 0 };
+    let attackRequested = false;
 
     function buildDefaultWalls(width, height, includeFarSection = false) {
       const walls = [
@@ -1085,6 +1214,83 @@
         const data = LEVELS[currentLevelIndex] || null;
         editorOutput.value = JSON.stringify(data, null, 2);
       });
+
+      setupTouchControls();
+    }
+
+    function shouldUseTouchControls() {
+      const touchCapable = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+      const smallScreen = Math.min(window.innerWidth, window.innerHeight) <= 900;
+      return touchCapable && smallScreen;
+    }
+
+    function setTouchMoveVectorFromPoint(clientX, clientY) {
+      const rect = touchMovePad.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      const maxR = rect.width * 0.33;
+      let dx = clientX - cx;
+      let dy = clientY - cy;
+      const d = Math.hypot(dx, dy);
+
+      if (d > maxR && d > 0) {
+        dx = dx / d * maxR;
+        dy = dy / d * maxR;
+      }
+
+      touchMoveKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+      touchMoveVector = normalize(dx / maxR, dy / maxR);
+      touchMoveActive = true;
+    }
+
+    function resetTouchMove() {
+      touchMovePointerId = null;
+      touchMoveActive = false;
+      touchMoveVector = { x: 0, y: 0 };
+      touchMoveKnob.style.transform = "translate(0px, 0px)";
+    }
+
+    function setupTouchControls() {
+      function updateTouchVisibility() {
+        const visible = shouldUseTouchControls();
+        touchControls.classList.toggle("visible", visible);
+        if (!visible) resetTouchMove();
+      }
+
+      updateTouchVisibility();
+      window.addEventListener("resize", updateTouchVisibility);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", updateTouchVisibility);
+      }
+
+      touchMovePad.addEventListener("pointerdown", e => {
+        if (!shouldUseTouchControls()) return;
+        e.preventDefault();
+        touchMovePointerId = e.pointerId;
+        touchMovePad.setPointerCapture(e.pointerId);
+        setTouchMoveVectorFromPoint(e.clientX, e.clientY);
+      });
+
+      touchMovePad.addEventListener("pointermove", e => {
+        if (e.pointerId !== touchMovePointerId) return;
+        e.preventDefault();
+        setTouchMoveVectorFromPoint(e.clientX, e.clientY);
+      });
+
+      const endMove = e => {
+        if (touchMovePointerId !== null && e.pointerId !== touchMovePointerId) return;
+        resetTouchMove();
+      };
+
+      touchMovePad.addEventListener("pointerup", endMove);
+      touchMovePad.addEventListener("pointercancel", endMove);
+
+      touchAttackBtn.addEventListener("pointerdown", e => {
+        if (!shouldUseTouchControls()) return;
+        e.preventDefault();
+        attackRequested = true;
+      });
     }
 
     function createPlayer(classType) {
@@ -1460,7 +1666,13 @@
       if (left) vx -= 1;
       if (right) vx += 1;
 
-      return normalize(vx, vy);
+      const keyboard = normalize(vx, vy);
+
+      if (!shouldUseTouchControls() || !touchMoveActive) {
+        return keyboard;
+      }
+
+      return normalize(keyboard.x + touchMoveVector.x, keyboard.y + touchMoveVector.y);
     }
 
     function obstacleBlocksMovement(o, entity) {
@@ -1519,8 +1731,10 @@
 
     function tryPlayerAttack() {
       attackTimer++;
-      if (attackTimer < player.attackCooldown) return;
+      const ready = attackTimer >= player.attackCooldown;
+      if (!ready) return;
       attackTimer = 0;
+      attackRequested = false;
 
       const target = nearestEnemyInRange(player.attackRange);
       if (!target) return;
