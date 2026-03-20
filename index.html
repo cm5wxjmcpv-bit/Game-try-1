@@ -476,6 +476,31 @@
     let camera = { x: 0, y: 0 };
     let terrainTexture = null;
     let editorMode = false;
+
+    const TILE_TEXTURE_PACKS = {
+      default: {
+        floor1: { path: "textures/floor1.png", fallback: "#7d6848" },
+        floor2: { path: "textures/floor2.png", fallback: "#7a7a7a" },
+        floor3: { path: "textures/floor3.png", fallback: "#a28d62" },
+        water: { path: "textures/water.png", fallback: "#2f71b8" },
+        lava: { path: "textures/lava.png", fallback: "#d96a2c" }
+      }
+    };
+
+    const TILE_RENDER_CONFIG = {
+      baseFallbackColor: "#202020",
+      idToTextureKey: {
+        2: "water",
+        3: "lava",
+        10: "floor1",
+        11: "floor2",
+        12: "floor3"
+      }
+    };
+
+    let activeTexturePack = "default";
+    let textureImageCache = {};
+    let texturePackDefaults = {};
     let activeEditorTool = "wall";
     let selectedEditorObject = null;
     let editorMouseDown = false;
@@ -1571,6 +1596,8 @@
       loop();
     }
 
+    preloadTileTextures();
+
     swordBtn.addEventListener("click", () => startGame("sword"));
     shooterBtn.addEventListener("click", () => startGame("shooter"));
 
@@ -1691,6 +1718,109 @@
       return arr;
     }
 
+    function preloadTileTextures(packName = activeTexturePack) {
+      activeTexturePack = TILE_TEXTURE_PACKS[packName] ? packName : "default";
+      const pack = TILE_TEXTURE_PACKS[activeTexturePack] || {};
+      textureImageCache = {};
+      texturePackDefaults = {};
+
+      for (const [key, def] of Object.entries(pack)) {
+        texturePackDefaults[key] = def.fallback || TILE_RENDER_CONFIG.baseFallbackColor;
+        textureImageCache[key] = { status: "missing", image: null };
+
+        if (!def.path) {
+          continue;
+        }
+
+        const img = new Image();
+        textureImageCache[key] = { status: "loading", image: img };
+
+        img.onload = () => {
+          textureImageCache[key].status = "ready";
+        };
+
+        img.onerror = () => {
+          textureImageCache[key].status = "error";
+          textureImageCache[key].image = null;
+        };
+
+        img.src = def.path;
+      }
+    }
+
+    function buildTileLayerInfo(level) {
+      if (!level || !Number.isFinite(level.gridSize) || !Array.isArray(level.tiles)) {
+        return null;
+      }
+
+      const gridSize = Math.max(1, Math.floor(level.gridSize));
+      const tileSize = level.width / gridSize;
+      if (!Number.isFinite(tileSize) || tileSize <= 0) {
+        return null;
+      }
+
+      return {
+        gridSize,
+        tileSize,
+        rows: level.tiles
+      };
+    }
+
+    function getTileRenderInfo(tileId) {
+      const textureKey = TILE_RENDER_CONFIG.idToTextureKey[tileId];
+      if (!textureKey) {
+        return null;
+      }
+
+      const cached = textureImageCache[textureKey];
+      const fallback = texturePackDefaults[textureKey] || TILE_RENDER_CONFIG.baseFallbackColor;
+
+      if (cached && cached.status === "ready" && cached.image) {
+        return { image: cached.image, fallback };
+      }
+
+      return { image: null, fallback };
+    }
+
+    function drawTileLayer() {
+      const tileLayer = currentLevel.tileLayer;
+      if (!tileLayer) {
+        return false;
+      }
+
+      ctx.fillStyle = currentLevel.bg || TILE_RENDER_CONFIG.baseFallbackColor;
+      ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
+
+      const { gridSize, tileSize, rows } = tileLayer;
+      for (let row = 0; row < gridSize; row++) {
+        const rowTiles = Array.isArray(rows[row]) ? rows[row] : [];
+
+        for (let col = 0; col < gridSize; col++) {
+          const rawTileId = Number(rowTiles[col]);
+          if (!Number.isFinite(rawTileId) || rawTileId === 0) {
+            continue;
+          }
+
+          const renderInfo = getTileRenderInfo(rawTileId);
+          if (!renderInfo) {
+            continue;
+          }
+
+          const x = col * tileSize;
+          const y = row * tileSize;
+
+          if (renderInfo.image) {
+            ctx.drawImage(renderInfo.image, x, y, tileSize, tileSize);
+          } else {
+            ctx.fillStyle = renderInfo.fallback;
+            ctx.fillRect(x, y, tileSize, tileSize);
+          }
+        }
+      }
+
+      return true;
+    }
+
     function createTerrainTexture(spec) {
       const tile = document.createElement("canvas");
       tile.width = 256;
@@ -1739,7 +1869,8 @@
       currentLevel.storeZone = { x: currentLevel.mapW - 300, y: currentLevel.mapH / 2 - 140, w: 120, h: 280 };
       currentLevel.decor = buildDecor(currentLevel);
       currentLevel.decorations.items = structuredClone(currentLevel.decor);
-      terrainTexture = createTerrainTexture(currentLevel);
+      currentLevel.tileLayer = buildTileLayerInfo(currentLevel);
+      terrainTexture = currentLevel.tileLayer ? null : createTerrainTexture(currentLevel);
       currentLevel.shopKeeper = {
         x: currentLevel.storeZone.x + currentLevel.storeZone.w / 2,
         y: currentLevel.storeZone.y + currentLevel.storeZone.h / 2 + 30
@@ -2560,6 +2691,10 @@
     }
 
     function drawWorldBackground() {
+      if (drawTileLayer()) {
+        return;
+      }
+
       ctx.fillStyle = terrainTexture || currentLevel.bg;
       ctx.fillRect(0, 0, currentLevel.mapW, currentLevel.mapH);
 
