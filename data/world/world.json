@@ -5,6 +5,7 @@
   ],
   "levels": [
     "level_fields",
+    "TTest1",
     "Adam1",
     "level_swamp",
     "level_lava",
@@ -18,6 +19,7 @@
     ],
     "unlockedLevels": [
       "level_fields",
+      "TTest1",
       "Adam1",
       "testlevel3"
     ],
