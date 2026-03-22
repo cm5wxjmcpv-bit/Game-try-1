@@ -45,10 +45,10 @@ export function createPlayer(classData, itemsById, startConfig = {}) {
       frameDuration: 0.16,
       sprite: {
         imagePath: 'assets/characters/Warrior_Blue.png',
-        frameWidth: 32,
-        frameHeight: 32,
-        idleFrames: [0],
-        walkFrames: [1, 2, 3, 4],
+        frameWidth: 192,
+        frameHeight: 192,
+        idleFrames: [0, 1, 2],
+        walkFrames: [0, 1, 2],
         rowByFacing: {
           down: { idle: 0, walk: 1 },
           left: { idle: 2, walk: 3 },
