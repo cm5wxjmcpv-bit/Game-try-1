@@ -47,6 +47,7 @@ export class Game {
     }
 
     this.player = createPlayer(classData, this.db.itemsById, this.db.world.start);
+    this.ensurePlayerAnimationState();
     this.loadTown(this.currentTownId);
     this.state.set(GAME_STATES.TOWN);
     this.ui.hideOverlay();
@@ -58,6 +59,7 @@ export class Game {
     if (!save) return this.ui.flash('No save found.');
 
     this.player = save.player;
+    this.ensurePlayerAnimationState();
     this.currentTownId = save.currentTownId || this.db.world.start.townId;
     this.loadTown(this.currentTownId);
     this.state.set(GAME_STATES.TOWN);
@@ -145,6 +147,9 @@ export class Game {
   }
 
   updateMovement(dt) {
+    this.ensurePlayerAnimationState();
+    const prevX = this.player.x;
+    const prevY = this.player.y;
     const baseSpeed = this.player.speed * (this.player.speedModifier || 1);
     let nx = this.player.x;
     let ny = this.player.y;
@@ -156,6 +161,7 @@ export class Game {
       this.player.x = nx;
       this.player.y = ny;
     }
+    this.updatePlayerAnimation(dt, this.player.x - prevX, this.player.y - prevY);
   }
 
   updateInteraction() {
@@ -230,5 +236,57 @@ export class Game {
 
   saveCheckpoint() {
     saveGame({ player: this.player, currentTownId: this.currentTownId });
+  }
+
+  ensurePlayerAnimationState() {
+    if (!this.player) return;
+    const anim = this.player.animation || {};
+    const sprite = anim.sprite || {};
+    this.player.animation = {
+      facing: anim.facing || this.player.facing || 'down',
+      state: anim.state || 'idle',
+      frameIndex: Number.isFinite(anim.frameIndex) ? anim.frameIndex : 0,
+      frameTimer: Number.isFinite(anim.frameTimer) ? anim.frameTimer : 0,
+      frameDuration: Number.isFinite(anim.frameDuration) ? anim.frameDuration : 0.16,
+      sprite: {
+        imagePath: sprite.imagePath || 'assets/characters/Warrior_Blue.png',
+        frameWidth: Number.isFinite(sprite.frameWidth) ? sprite.frameWidth : 32,
+        frameHeight: Number.isFinite(sprite.frameHeight) ? sprite.frameHeight : 32,
+        idleFrames: Array.isArray(sprite.idleFrames) && sprite.idleFrames.length ? sprite.idleFrames : [0],
+        walkFrames: Array.isArray(sprite.walkFrames) && sprite.walkFrames.length ? sprite.walkFrames : [1, 2, 3, 4],
+        rowByFacing: sprite.rowByFacing || {
+          down: { idle: 0, walk: 1 },
+          left: { idle: 2, walk: 3 },
+          right: { idle: 4, walk: 5 },
+          up: { idle: 6, walk: 7 },
+        },
+      },
+    };
+  }
+
+  updatePlayerAnimation(dt, dx, dy) {
+    const anim = this.player.animation;
+    const moved = Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001;
+    if (moved) {
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        anim.facing = dx >= 0 ? 'right' : 'left';
+      } else {
+        anim.facing = dy >= 0 ? 'down' : 'up';
+      }
+      anim.state = 'walk';
+      anim.frameTimer += dt;
+      const frames = anim.sprite.walkFrames;
+      while (anim.frameTimer >= anim.frameDuration) {
+        anim.frameTimer -= anim.frameDuration;
+        anim.frameIndex = (anim.frameIndex + 1) % frames.length;
+      }
+      this.player.facing = anim.facing;
+      return;
+    }
+
+    anim.state = 'idle';
+    anim.frameIndex = 0;
+    anim.frameTimer = 0;
+    this.player.facing = anim.facing;
   }
 }
