@@ -136,10 +136,10 @@ export class Renderer {
       rowIndex * frameH,
       frameW,
       frameH,
-      screenX,
-      screenY,
-      TILE_SIZE,
-      TILE_SIZE,
+      screenX - TILE_SIZE * 0.5,
+      screenY - TILE_SIZE * 0.5,
+      TILE_SIZE * 2,
+      TILE_SIZE * 2,
     );
     return true;
   }
