@@ -30,6 +30,9 @@ export class Game {
     this.currentEnemies = [];
     this.currentTownId = null;
     this.camera = new Camera(this.renderer.canvas.width, this.renderer.canvas.height);
+
+    this.showMiniMap = false;   // 👈 ADD THIS LINE
+
     this.fx = { hitMarkers: [] };
   }
 
