@@ -93,8 +93,10 @@ export class Renderer {
   drawEntities(game) {
     const { ctx } = this;
     const playerPos = game.camera.worldToScreen(game.player.x, game.player.y);
-    ctx.fillStyle = '#7af0a0';
-    ctx.fillRect(playerPos.x + 6, playerPos.y + 6, 20, 20);
+    if (!this.drawPlayerSprite(game, playerPos.x, playerPos.y)) {
+      ctx.fillStyle = '#7af0a0';
+      ctx.fillRect(playerPos.x + 6, playerPos.y + 6, 20, 20);
+    }
 
     for (const enemy of game.currentEnemies) {
       if (enemy.dead) continue;
@@ -102,6 +104,42 @@ export class Renderer {
       ctx.fillStyle = '#f06464';
       ctx.fillRect(pos.x + 6, pos.y + 6, 20, 20);
     }
+  }
+
+  drawPlayerSprite(game, screenX, screenY) {
+    const { player } = game;
+    const anim = player.animation;
+    if (!anim?.sprite?.imagePath) return false;
+
+    const image = this.getTextureImage(anim.sprite.imagePath);
+    if (!image) return false;
+
+    const facingRows = anim.sprite.rowByFacing?.[anim.facing];
+    if (!facingRows) return false;
+
+    const state = anim.state === 'walk' ? 'walk' : 'idle';
+    const rowIndex = facingRows[state];
+    if (!Number.isFinite(rowIndex)) return false;
+
+    const frames = state === 'walk' ? anim.sprite.walkFrames : anim.sprite.idleFrames;
+    if (!Array.isArray(frames) || !frames.length) return false;
+    const frameSlot = frames[anim.frameIndex % frames.length];
+    if (!Number.isFinite(frameSlot)) return false;
+
+    const frameW = anim.sprite.frameWidth;
+    const frameH = anim.sprite.frameHeight;
+    ctx.drawImage(
+      image,
+      frameSlot * frameW,
+      rowIndex * frameH,
+      frameW,
+      frameH,
+      screenX,
+      screenY,
+      TILE_SIZE,
+      TILE_SIZE,
+    );
+    return true;
   }
 
   drawFx(game) {
