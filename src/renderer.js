@@ -107,6 +107,8 @@ export class Renderer {
   }
 
   drawPlayerSprite(game, screenX, screenY) {
+    const { ctx } = this;
+    
     const { player } = game;
     const anim = player.animation;
     if (!anim?.sprite?.imagePath) return false;
