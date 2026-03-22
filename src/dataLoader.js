@@ -34,6 +34,74 @@ function withWorldDefaults(world) {
   };
 }
 
+function validateAndNormalizeMap(map, expectedId, kind = 'map') {
+  if (!map || typeof map !== 'object') {
+    console.warn(`[DataLoader] Invalid ${kind} file for "${expectedId}"`);
+    return null;
+  }
+
+  if (!map.id) {
+    console.warn(`[DataLoader] ${kind} file "${expectedId}" is missing id`);
+    return null;
+  }
+
+  if (map.id !== expectedId) {
+    console.warn(`[DataLoader] ${kind} id mismatch: expected "${expectedId}" but found "${map.id}"`);
+  }
+
+  if (!Number.isInteger(map.width) || map.width <= 0) {
+    console.warn(`[DataLoader] ${kind} "${map.id}" has invalid width`, map.width);
+  }
+
+  if (!Number.isInteger(map.height) || map.height <= 0) {
+    console.warn(`[DataLoader] ${kind} "${map.id}" has invalid height`, map.height);
+  }
+
+  if (!Array.isArray(map.tiles)) {
+    console.warn(`[DataLoader] ${kind} "${map.id}" is missing tiles array`);
+  } else {
+    if (typeof map.height === 'number' && map.tiles.length !== map.height) {
+      console.warn(
+        `[DataLoader] ${kind} "${map.id}" tile row count (${map.tiles.length}) does not match height (${map.height})`
+      );
+    }
+
+    for (let row = 0; row < map.tiles.length; row++) {
+      if (!Array.isArray(map.tiles[row])) {
+        console.warn(`[DataLoader] ${kind} "${map.id}" row ${row} is not an array`);
+        continue;
+      }
+
+      if (typeof map.width === 'number' && map.tiles[row].length !== map.width) {
+        console.warn(
+          `[DataLoader] ${kind} "${map.id}" row ${row} length (${map.tiles[row].length}) does not match width (${map.width})`
+        );
+      }
+    }
+  }
+
+  if (!map.objects || typeof map.objects !== 'object') {
+    map.objects = {};
+  }
+
+  if (!Array.isArray(map.objects.portals)) map.objects.portals = [];
+  if (!Array.isArray(map.objects.shops)) map.objects.shops = [];
+  if (!Array.isArray(map.objects.fountains)) map.objects.fountains = [];
+  if (!Array.isArray(map.objects.enemySpawns)) map.objects.enemySpawns = [];
+
+  if (
+    !map.spawn ||
+    typeof map.spawn !== 'object' ||
+    typeof map.spawn.x !== 'number' ||
+    typeof map.spawn.y !== 'number'
+  ) {
+    console.warn(`[DataLoader] ${kind} "${map.id}" has invalid or missing spawn; defaulting to 1,1`);
+    map.spawn = { x: 1, y: 1 };
+  }
+
+  return map;
+}
+
 export async function loadDatabase() {
   const [tiles, tileEffects, texturePack, rawWorld, classes, items, enemies, shops, progression] = await Promise.all([
     loadJSON('./data/tiles/tiles.json', { tiles: [] }),
@@ -48,8 +116,20 @@ export async function loadDatabase() {
   ]);
 
   const world = withWorldDefaults(rawWorld);
-  const townMaps = await Promise.all(world.towns.map((id) => loadJSON(`./data/towns/${id}.json`)));
-  const levelMaps = await Promise.all(world.levels.map((id) => loadJSON(`./data/levels/${id}.json`)));
+  const townMaps = (
+    await Promise.all(
+      world.towns.map(async (id) =>
+        validateAndNormalizeMap(await loadJSON(`./data/towns/${id}.json`), id, 'town')
+      )
+    )
+  ).filter(Boolean);
+  const levelMaps = (
+    await Promise.all(
+      world.levels.map(async (id) =>
+        validateAndNormalizeMap(await loadJSON(`./data/levels/${id}.json`), id, 'level')
+      )
+    )
+  ).filter(Boolean);
 
   return {
     tileDefs: mapById(tiles.tiles, 'tile'),
