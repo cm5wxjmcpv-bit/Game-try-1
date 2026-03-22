@@ -250,10 +250,10 @@ export class Game {
       frameDuration: Number.isFinite(anim.frameDuration) ? anim.frameDuration : 0.16,
       sprite: {
         imagePath: sprite.imagePath || 'assets/characters/Warrior_Blue.png',
-        frameWidth: Number.isFinite(sprite.frameWidth) ? sprite.frameWidth : 192,
-        frameHeight: Number.isFinite(sprite.frameHeight) ? sprite.frameHeight : 192,
-        idleFrames: Array.isArray(sprite.idleFrames) && sprite.idleFrames.length ? sprite.idleFrames : [0, 1, 2],
-        walkFrames: Array.isArray(sprite.walkFrames) && sprite.walkFrames.length ? sprite.walkFrames : [0, 1, 2],
+       frameWidth: Number.isFinite(sprite.frameWidth) ? sprite.frameWidth : 192,
+frameHeight: Number.isFinite(sprite.frameHeight) ? sprite.frameHeight : 192,
+idleFrames: Array.isArray(sprite.idleFrames) && sprite.idleFrames.length ? sprite.idleFrames : [0, 1, 2],
+walkFrames: Array.isArray(sprite.walkFrames) && sprite.walkFrames.length ? sprite.walkFrames : [0, 1, 2],
         rowByFacing: sprite.rowByFacing || {
           down: { idle: 0, walk: 1 },
           left: { idle: 2, walk: 3 },
