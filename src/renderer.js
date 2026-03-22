@@ -22,7 +22,7 @@ export class Renderer {
     this.drawObjects(game);
     this.drawEntities(game);
     this.drawFx(game);
-    drawMiniMap(ctx, game, this.canvas.width - 210, 10, 200, 140);
+    if (game.showMiniMap) drawMiniMap(ctx, game, this.canvas.width - 210, 10, 200, 140);
     if (game.debug.enabled) this.drawDebug(game);
   }
 
