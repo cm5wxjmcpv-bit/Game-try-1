@@ -37,6 +37,26 @@ export function createPlayer(classData, itemsById, startConfig = {}) {
     cooldowns: { autoAttack: 0 },
     baseWeapon: itemsById[weaponId],
     questLog: [],
+    animation: {
+      facing: 'down',
+      state: 'idle',
+      frameIndex: 0,
+      frameTimer: 0,
+      frameDuration: 0.16,
+      sprite: {
+        imagePath: 'assets/characters/Warrior_Blue.png',
+        frameWidth: 32,
+        frameHeight: 32,
+        idleFrames: [0],
+        walkFrames: [1, 2, 3, 4],
+        rowByFacing: {
+          down: { idle: 0, walk: 1 },
+          left: { idle: 2, walk: 3 },
+          right: { idle: 4, walk: 5 },
+          up: { idle: 6, walk: 7 },
+        },
+      },
+    },
   };
 }
 
