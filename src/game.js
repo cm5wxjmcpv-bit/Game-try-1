@@ -11,6 +11,7 @@ import { saveGame, loadGame } from './saveSystem.js';
 import { updateStatusEffects } from './statusEffects.js';
 import { loadDatabase } from './dataLoader.js';
 import { Camera } from './camera.js';
+import { BattleSystem } from './battleSystem.js';
 
 const GAMEPLAY_STATES = [GAME_STATES.TOWN, GAME_STATES.LEVEL];
 
@@ -34,6 +35,12 @@ export class Game {
     this.showMiniMap = false;   // 👈 ADD THIS LINE
 
     this.fx = { hitMarkers: [] };
+    this.battleSystem = new BattleSystem(this);
+    this.randomEncounter = {
+      elapsedSeconds: 0,
+      nextInSeconds: 0,
+    };
+    this.playerMovedThisFrame = false;
   }
 
   async init() {
@@ -50,6 +57,7 @@ export class Game {
     }
 
     this.player = createPlayer(classData, this.db.itemsById, this.db.world.start);
+    this.ensureBattleProgressState();
     this.ensurePlayerAnimationState();
     this.loadTown(this.currentTownId);
     this.state.set(GAME_STATES.TOWN);
@@ -62,6 +70,7 @@ export class Game {
     if (!save) return this.ui.flash('No save found.');
 
     this.player = save.player;
+    this.ensureBattleProgressState();
     this.ensurePlayerAnimationState();
     this.currentTownId = save.currentTownId || this.db.world.start.townId;
     this.loadTown(this.currentTownId);
@@ -79,6 +88,7 @@ export class Game {
     this.currentMap = structuredClone(town);
     this.currentTownId = townId;
     this.currentEnemies = [];
+    this.resetRandomEncounterTimer(true);
     this.player.x = this.currentMap.spawn.x;
     this.player.y = this.currentMap.spawn.y;
   }
@@ -91,12 +101,17 @@ export class Game {
     }
 
     this.currentMap = structuredClone(level);
-    this.currentEnemies = (this.currentMap.objects.enemySpawns || []).map((spawn) => {
-      const template = this.db.enemiesById[spawn.enemyId];
-      return createEnemy(template, spawn);
-    });
+    if (this.currentMap.objects.battleTriggers?.length) {
+      this.currentEnemies = [];
+    } else {
+      this.currentEnemies = (this.currentMap.objects.enemySpawns || []).map((spawn) => {
+        const template = this.db.enemiesById[spawn.enemyId];
+        return createEnemy(template, spawn);
+      });
+    }
     this.player.x = this.currentMap.spawn.x;
     this.player.y = this.currentMap.spawn.y;
+    this.resetRandomEncounterTimer(true);
     this.state.set(GAME_STATES.LEVEL);
   }
 
@@ -109,12 +124,22 @@ export class Game {
 
     const hasOverlay = this.ui.isOverlayOpen();
     const canSimulate = this.isGameplayState() && !this.state.is(GAME_STATES.PAUSE) && !hasOverlay;
+    this.playerMovedThisFrame = false;
+    if (this.state.is(GAME_STATES.BATTLE) && !this.state.is(GAME_STATES.PAUSE) && !hasOverlay) {
+      this.battleSystem.update();
+    }
     if (canSimulate) {
       this.updateMovement(dt);
       this.updateInteraction();
       if (this.state.is(GAME_STATES.LEVEL)) {
-        updateEnemies(this, dt, now / 1000);
-        updateAutoAttack(this, dt);
+        this.tryStartBattleFromTrigger();
+        if (!this.state.is(GAME_STATES.BATTLE)) {
+          this.updateRandomEncounters(dt);
+        }
+        if (!this.usesTriggerBattles()) {
+          updateEnemies(this, dt, now / 1000);
+          updateAutoAttack(this, dt);
+        }
       }
       updateStatusEffects(this.player, dt);
       this.applyCurrentTileEffect();
@@ -138,6 +163,42 @@ export class Game {
 
   isGameplayState() {
     return GAMEPLAY_STATES.includes(this.state.current);
+  }
+
+  ensureBattleProgressState() {
+    if (!Array.isArray(this.player.completedBattleTriggers)) {
+      this.player.completedBattleTriggers = [];
+    }
+  }
+
+  hasCompletedBattleTrigger(mapId, triggerId) {
+    return this.player.completedBattleTriggers.includes(`${mapId}:${triggerId}`);
+  }
+
+  isPlayerInsideTrigger(trigger) {
+    const width = trigger.width ?? 1;
+    const height = trigger.height ?? 1;
+    return this.player.x >= trigger.x &&
+      this.player.x < trigger.x + width &&
+      this.player.y >= trigger.y &&
+      this.player.y < trigger.y + height;
+  }
+
+  tryStartBattleFromTrigger() {
+    const triggers = this.currentMap.objects.battleTriggers || [];
+    const trigger = triggers.find((entry) => {
+      if (!entry.encounterId) return false;
+      if (entry.once && this.hasCompletedBattleTrigger(this.currentMap.id, entry.id)) return false;
+      return this.isPlayerInsideTrigger(entry);
+    });
+    if (!trigger) return;
+
+    const started = this.battleSystem.startFromTrigger(trigger);
+    if (started) this.state.set(GAME_STATES.BATTLE);
+  }
+
+  usesTriggerBattles() {
+    return Boolean(this.currentMap?.objects?.battleTriggers?.length);
   }
 
   applyCurrentTileEffect() {
@@ -164,7 +225,80 @@ export class Game {
       this.player.x = nx;
       this.player.y = ny;
     }
+    this.playerMovedThisFrame = Math.abs(this.player.x - prevX) > 0.0001 || Math.abs(this.player.y - prevY) > 0.0001;
     this.updatePlayerAnimation(dt, this.player.x - prevX, this.player.y - prevY);
+  }
+
+  updateRandomEncounters(dt) {
+    const config = this.currentMap.randomEncounters;
+    if (!config?.enabled || !config.tableId) return;
+    if (!this.playerMovedThisFrame) return;
+
+    if (!this.randomEncounter.nextInSeconds) {
+      this.randomEncounter.nextInSeconds = this.rollRandomEncounterDelay(config.minSeconds, config.maxSeconds);
+    }
+
+    this.randomEncounter.elapsedSeconds += dt;
+    if (this.randomEncounter.elapsedSeconds < this.randomEncounter.nextInSeconds) return;
+
+    const encounterId = this.chooseEncounterFromTable(config.tableId);
+    if (!encounterId) {
+      this.resetRandomEncounterTimer(true);
+      return;
+    }
+
+    const started = this.battleSystem.startRandomEncounter(encounterId);
+    if (started) {
+      this.state.set(GAME_STATES.BATTLE);
+      this.resetRandomEncounterTimer(true);
+    }
+  }
+
+  rollRandomEncounterDelay(minSeconds = 10, maxSeconds = 60) {
+    const min = Math.max(1, Math.min(minSeconds, maxSeconds));
+    const max = Math.max(min, Math.max(minSeconds, maxSeconds));
+    return min + Math.random() * (max - min);
+  }
+
+  chooseEncounterFromTable(tableId) {
+    const table = this.db.encounterTablesById[tableId];
+    if (!table) {
+      console.warn(`[Game] Random encounter table not found: ${tableId}`);
+      return null;
+    }
+
+    const entries = (table.entries || []).filter((entry) =>
+      entry &&
+      typeof entry.encounterId === 'string' &&
+      Number.isFinite(entry.weight) &&
+      entry.weight > 0 &&
+      this.db.encountersById[entry.encounterId]
+    );
+    if (!entries.length) {
+      console.warn(`[Game] Random encounter table "${tableId}" has no valid entries.`);
+      return null;
+    }
+
+    const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0);
+    let roll = Math.random() * totalWeight;
+    for (const entry of entries) {
+      roll -= entry.weight;
+      if (roll <= 0) return entry.encounterId;
+    }
+    return entries[entries.length - 1].encounterId;
+  }
+
+  resetRandomEncounterTimer(rollNew = false) {
+    this.randomEncounter.elapsedSeconds = 0;
+    this.randomEncounter.nextInSeconds = 0;
+    if (!rollNew) return;
+    const config = this.currentMap?.randomEncounters;
+    if (!config?.enabled) return;
+    this.randomEncounter.nextInSeconds = this.rollRandomEncounterDelay(config.minSeconds, config.maxSeconds);
+  }
+
+  onBattleEnded(_result, sourceType) {
+    if (sourceType === 'random') this.resetRandomEncounterTimer(true);
   }
 
   updateInteraction() {
