@@ -969,10 +969,27 @@
     "portals": [],
     "shops": [],
     "fountains": [],
-    "enemySpawns": []
+    "enemySpawns": [],
+    "battleTriggers": [
+      {
+        "id": "fight_001",
+        "x": 3,
+        "y": 2,
+        "width": 1,
+        "height": 1,
+        "encounterId": "slimes_intro",
+        "once": true
+      }
+    ]
   },
   "spawn": {
     "x": 2,
     "y": 2
+  },
+  "randomEncounters": {
+    "enabled": true,
+    "minSeconds": 10,
+    "maxSeconds": 60,
+    "tableId": "ttest1_randoms"
   }
 }
