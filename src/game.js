@@ -39,6 +39,7 @@ export class Game {
     this.randomEncounter = {
       elapsedSeconds: 0,
       nextInSeconds: 0,
+      graceRemainingSeconds: 0,
     };
     this.playerMovedThisFrame = false;
   }
@@ -112,6 +113,7 @@ export class Game {
     this.player.x = this.currentMap.spawn.x;
     this.player.y = this.currentMap.spawn.y;
     this.resetRandomEncounterTimer(true);
+    this.randomEncounter.graceRemainingSeconds = 5;
     this.state.set(GAME_STATES.LEVEL);
   }
 
@@ -232,6 +234,10 @@ export class Game {
   updateRandomEncounters(dt) {
     const config = this.currentMap.randomEncounters;
     if (!config?.enabled || !config.tableId) return;
+    if (this.randomEncounter.graceRemainingSeconds > 0) {
+      this.randomEncounter.graceRemainingSeconds = Math.max(0, this.randomEncounter.graceRemainingSeconds - dt);
+      return;
+    }
     if (!this.playerMovedThisFrame) return;
 
     if (!this.randomEncounter.nextInSeconds) {
@@ -291,6 +297,7 @@ export class Game {
   resetRandomEncounterTimer(rollNew = false) {
     this.randomEncounter.elapsedSeconds = 0;
     this.randomEncounter.nextInSeconds = 0;
+    this.randomEncounter.graceRemainingSeconds = 0;
     if (!rollNew) return;
     const config = this.currentMap?.randomEncounters;
     if (!config?.enabled) return;

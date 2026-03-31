@@ -1,6 +1,12 @@
 import { rollDrops } from './drops.js';
 import { GAME_STATES } from './stateManager.js';
 
+const ATTACK_OPTIONS = [
+  { id: 'light', label: '1 Light', accuracy: 1, power: 0.85, bonus: 0 },
+  { id: 'heavy', label: '2 Heavy', accuracy: 0.7, power: 1.45, bonus: 0 },
+  { id: 'magic', label: '3 Magic', accuracy: 0.9, power: 1.15, bonus: 4 },
+];
+
 function cloneEncounterEnemies(encounter, enemiesById) {
   const battleEnemies = [];
   for (const enemyId of encounter.enemies || []) {
@@ -64,11 +70,13 @@ export class BattleSystem {
       sourceType: context.sourceType,
       background: encounter.background || 'default',
       state: 'player_turn',
-      turnMessage: 'Your turn. Press E to Attack.',
+      turnMessage: 'Your turn. Choose attack (1/2/3), then press E.',
       enemies,
-      selectedEnemyIndex: 0,
+      selectedActionIndex: 0,
       rewardGold: 0,
       rewardDrops: [],
+      enemyTurnIndex: 0,
+      enemyTurnTimer: 0.2,
     };
 
     return true;
@@ -78,26 +86,46 @@ export class BattleSystem {
     const battle = this.activeBattle;
     if (!battle) return;
 
-    if (battle.state !== 'player_turn') return;
+    if (battle.state === 'player_turn') {
+      this.handlePlayerTurnInput(battle);
+      return;
+    }
+
+    if (battle.state === 'enemy_turn') {
+      this.runEnemyTurnStep();
+    }
+  }
+
+  handlePlayerTurnInput(battle) {
+    if (this.game.input.justPressed.has('Digit1')) battle.selectedActionIndex = 0;
+    if (this.game.input.justPressed.has('Digit2')) battle.selectedActionIndex = 1;
+    if (this.game.input.justPressed.has('Digit3')) battle.selectedActionIndex = 2;
+
     if (!this.game.input.wasActionPressed('interact')) return;
 
+    const action = ATTACK_OPTIONS[battle.selectedActionIndex] || ATTACK_OPTIONS[0];
     const target = battle.enemies.find((enemy) => !enemy.dead);
     if (!target) {
       this.finishBattle('victory');
       return;
     }
 
-    const playerAttack = this.game.player.stats.attack;
-    const damage = Math.max(1, playerAttack - target.template.stats.defense);
-    target.hp -= damage;
-    battle.turnMessage = `You hit ${target.template.name} for ${damage}.`;
+    if (Math.random() > action.accuracy) {
+      battle.turnMessage = `${action.label} missed ${target.template.name}.`;
+    } else {
+      const baseAttack = this.game.player.stats.attack;
+      const scaled = Math.floor(baseAttack * action.power) + action.bonus;
+      const damage = Math.max(1, scaled - target.template.stats.defense);
+      target.hp -= damage;
+      battle.turnMessage = `${action.label} hit ${target.template.name} for ${damage}.`;
 
-    if (target.hp <= 0) {
-      target.dead = true;
-      const reward = rollDrops(target.template, this.game.player, this.game.db.itemsById);
-      battle.rewardGold += reward.gold;
-      if (reward.drops.length) battle.rewardDrops.push(...reward.drops);
-      battle.turnMessage = `${target.template.name} is defeated!`;
+      if (target.hp <= 0) {
+        target.dead = true;
+        const reward = rollDrops(target.template, this.game.player, this.game.db.itemsById);
+        battle.rewardGold += reward.gold;
+        if (reward.drops.length) battle.rewardDrops.push(...reward.drops);
+        battle.turnMessage = `${target.template.name} is defeated by ${action.label}.`;
+      }
     }
 
     if (battle.enemies.every((enemy) => enemy.dead)) {
@@ -105,30 +133,41 @@ export class BattleSystem {
       return;
     }
 
-    this.runEnemyTurn();
+    battle.state = 'enemy_turn';
+    battle.enemyTurnIndex = 0;
+    battle.enemyTurnTimer = 0.2;
+    battle.turnMessage += ' Enemy turn...';
   }
 
-  runEnemyTurn() {
+  runEnemyTurnStep() {
     const battle = this.activeBattle;
     if (!battle) return;
 
-    let totalDamage = 0;
-    for (const enemy of battle.enemies) {
-      if (enemy.dead) continue;
-      const damage = Math.max(1, enemy.template.combat.attack - this.game.player.stats.defense);
-      this.game.player.stats.hp -= damage;
-      totalDamage += damage;
-      if (this.game.player.stats.hp <= 0) {
-        this.game.player.stats.hp = 0;
-        this.finishBattle('defeat');
-        return;
-      }
+    battle.enemyTurnTimer -= this.game.dt;
+    if (battle.enemyTurnTimer > 0) return;
+
+    while (battle.enemyTurnIndex < battle.enemies.length && battle.enemies[battle.enemyTurnIndex].dead) {
+      battle.enemyTurnIndex += 1;
     }
 
-    battle.state = 'player_turn';
-    battle.turnMessage = totalDamage > 0
-      ? `Enemies hit you for ${totalDamage}. Press E to Attack.`
-      : 'Enemies did no damage. Press E to Attack.';
+    if (battle.enemyTurnIndex >= battle.enemies.length) {
+      battle.state = 'player_turn';
+      battle.turnMessage = 'Your turn. Choose attack (1/2/3), then press E.';
+      return;
+    }
+
+    const enemy = battle.enemies[battle.enemyTurnIndex];
+    const damage = Math.max(1, enemy.template.combat.attack - this.game.player.stats.defense);
+    this.game.player.stats.hp -= damage;
+    battle.turnMessage = `${enemy.template.name} hits you for ${damage}.`;
+    battle.enemyTurnIndex += 1;
+    battle.enemyTurnTimer = 0.35;
+
+    if (this.game.player.stats.hp <= 0) {
+      this.game.player.stats.hp = 0;
+      this.finishBattle('defeat');
+      return;
+    }
   }
 
   finishBattle(result) {

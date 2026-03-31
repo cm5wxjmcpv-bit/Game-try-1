@@ -40,36 +40,43 @@ export class Renderer {
 
     const w = this.canvas.width;
     const h = this.canvas.height;
+    const panelHeight = 170;
     ctx.fillStyle = battle.background === 'dungeon' ? '#1a1f2f' : '#1f2a3a';
     ctx.fillRect(0, 0, w, h);
 
-    const aliveEnemies = battle.enemies.filter((enemy) => !enemy.dead);
-    aliveEnemies.forEach((enemy, index) => {
-      const x = 90 + (index % 3) * 100;
-      const y = 120 + Math.floor(index / 3) * 70;
+    const enemies = battle.enemies.filter((enemy) => !enemy.dead);
+    const enemyStartY = Math.max(80, (h - panelHeight - enemies.length * 80) / 2);
+    enemies.forEach((enemy, index) => {
+      const x = 120 + (index % 2) * 45;
+      const y = enemyStartY + index * 80;
       ctx.fillStyle = '#d95f5f';
-      ctx.fillRect(x, y, 40, 40);
+      ctx.fillRect(x, y, 46, 46);
       ctx.fillStyle = '#fff';
       ctx.fillText(`${enemy.template.name} HP:${Math.max(0, Math.ceil(enemy.hp))}`, x - 20, y - 10);
     });
 
-    const playerX = w - 180;
-    const playerY = 160;
+    const playerX = w - 220;
+    const playerY = Math.max(110, h - panelHeight - 150);
     ctx.fillStyle = '#67d8a5';
-    ctx.fillRect(playerX, playerY, 48, 48);
+    ctx.fillRect(playerX, playerY, 54, 54);
     ctx.fillStyle = '#fff';
-    ctx.fillText('Player', playerX - 8, playerY - 12);
+    ctx.fillText(`Player HP:${Math.max(0, Math.floor(game.player.stats.hp))}/${game.player.stats.maxHp}`, playerX - 38, playerY - 12);
 
-    const panelHeight = 150;
     ctx.fillStyle = '#0f1726';
     ctx.fillRect(0, h - panelHeight, w, panelHeight);
     ctx.strokeStyle = '#476089';
     ctx.strokeRect(0, h - panelHeight, w, panelHeight);
     ctx.fillStyle = '#fff';
     ctx.fillText(`Encounter: ${battle.encounterId}`, 20, h - 118);
-    ctx.fillText(`HP: ${Math.max(0, Math.floor(game.player.stats.hp))}/${game.player.stats.maxHp}`, 20, h - 94);
-    ctx.fillText('Command: [E] Attack', 20, h - 70);
-    ctx.fillText(battle.turnMessage, 20, h - 44);
+    ctx.fillText(`Turn: ${battle.state === 'player_turn' ? 'Player' : 'Enemies'}`, 20, h - 94);
+    ctx.fillText('Actions: 1 Light | 2 Heavy | 3 Magic | E Confirm', 20, h - 70);
+    const options = ['1 Light', '2 Heavy', '3 Magic'];
+    options.forEach((label, index) => {
+      ctx.fillStyle = battle.selectedActionIndex === index ? '#8ee3ff' : '#c9d7ee';
+      ctx.fillText(`${battle.selectedActionIndex === index ? '>' : ' '} ${label}`, 420 + index * 130, h - 70);
+    });
+    ctx.fillStyle = '#fff';
+    ctx.fillText(battle.turnMessage, 20, h - 40);
   }
 
   drawMap(game) {
