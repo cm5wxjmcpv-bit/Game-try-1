@@ -88,6 +88,27 @@ function validateAndNormalizeMap(map, expectedId, kind = 'map') {
   if (!Array.isArray(map.objects.shops)) map.objects.shops = [];
   if (!Array.isArray(map.objects.fountains)) map.objects.fountains = [];
   if (!Array.isArray(map.objects.enemySpawns)) map.objects.enemySpawns = [];
+  if (!Array.isArray(map.objects.battleTriggers)) map.objects.battleTriggers = [];
+
+  map.objects.battleTriggers = map.objects.battleTriggers
+    .filter((trigger) => trigger && typeof trigger === 'object' && trigger.id && trigger.encounterId)
+    .map((trigger) => ({
+      ...trigger,
+      width: Number.isFinite(trigger.width) && trigger.width > 0 ? trigger.width : 1,
+      height: Number.isFinite(trigger.height) && trigger.height > 0 ? trigger.height : 1,
+      once: trigger.once !== false,
+    }));
+
+  if (!map.randomEncounters || typeof map.randomEncounters !== 'object') {
+    map.randomEncounters = { enabled: false, minSeconds: 10, maxSeconds: 60, tableId: null };
+  } else {
+    map.randomEncounters = {
+      enabled: Boolean(map.randomEncounters.enabled),
+      minSeconds: Number.isFinite(map.randomEncounters.minSeconds) ? map.randomEncounters.minSeconds : 10,
+      maxSeconds: Number.isFinite(map.randomEncounters.maxSeconds) ? map.randomEncounters.maxSeconds : 60,
+      tableId: typeof map.randomEncounters.tableId === 'string' ? map.randomEncounters.tableId : null,
+    };
+  }
 
   if (
     !map.spawn ||
@@ -103,7 +124,7 @@ function validateAndNormalizeMap(map, expectedId, kind = 'map') {
 }
 
 export async function loadDatabase() {
-  const [tiles, tileEffects, texturePack, rawWorld, classes, items, enemies, shops, progression] = await Promise.all([
+  const [tiles, tileEffects, texturePack, rawWorld, classes, items, enemies, shops, progression, encounters, encounterTables] = await Promise.all([
     loadJSON('./data/tiles/tiles.json', { tiles: [] }),
     loadJSON('./data/tiles/effects.json', { effects: [] }),
     loadJSON('./data/texturepacks/default-pack.json', { textures: [] }),
@@ -113,6 +134,8 @@ export async function loadDatabase() {
     loadJSON('./data/enemies/enemies.json', { enemies: [] }),
     loadJSON('./data/shops/shops.json', { shops: [] }),
     loadJSON('./data/world/progression.json', { unlocks: {} }),
+    loadJSON('./data/encounters/encounters.json', { encounters: [] }),
+    loadJSON('./data/encounters/tables.json', { tables: [] }),
   ]);
 
   const world = withWorldDefaults(rawWorld);
@@ -140,6 +163,8 @@ export async function loadDatabase() {
     itemsById: mapById(items.items, 'item'),
     enemiesById: mapById(enemies.enemies, 'enemy'),
     shopsById: mapById(shops.shops, 'shop'),
+    encountersById: mapById(encounters.encounters, 'encounter'),
+    encounterTablesById: mapById(encounterTables.tables, 'encounter table'),
     townsById: Object.fromEntries(townMaps.filter((m) => m?.id).map((m) => [m.id, m])),
     levelsById: Object.fromEntries(levelMaps.filter((m) => m?.id).map((m) => [m.id, m])),
     progression,

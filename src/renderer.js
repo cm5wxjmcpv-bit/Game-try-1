@@ -1,6 +1,7 @@
 import { drawMiniMap } from './miniMap.js';
 import { debugText } from './debug.js';
 import { TILE_SIZE } from './camera.js';
+import { GAME_STATES } from './stateManager.js';
 
 export class Renderer {
   constructor(canvas) {
@@ -15,6 +16,12 @@ export class Renderer {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     if (!game.currentMap) return;
 
+    if (game.state.is(GAME_STATES.BATTLE)) {
+      this.drawBattle(game);
+      if (game.debug.enabled) this.drawDebug(game);
+      return;
+    }
+
     game.camera.setViewport(this.canvas.width, this.canvas.height);
     game.camera.update(game.player.x, game.player.y, game.currentMap.width, game.currentMap.height);
 
@@ -24,6 +31,45 @@ export class Renderer {
     this.drawFx(game);
     if (game.showMiniMap) drawMiniMap(ctx, game, this.canvas.width - 210, 10, 200, 140);
     if (game.debug.enabled) this.drawDebug(game);
+  }
+
+  drawBattle(game) {
+    const { ctx } = this;
+    const battle = game.battleSystem.activeBattle;
+    if (!battle) return;
+
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    ctx.fillStyle = battle.background === 'dungeon' ? '#1a1f2f' : '#1f2a3a';
+    ctx.fillRect(0, 0, w, h);
+
+    const aliveEnemies = battle.enemies.filter((enemy) => !enemy.dead);
+    aliveEnemies.forEach((enemy, index) => {
+      const x = 90 + (index % 3) * 100;
+      const y = 120 + Math.floor(index / 3) * 70;
+      ctx.fillStyle = '#d95f5f';
+      ctx.fillRect(x, y, 40, 40);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(`${enemy.template.name} HP:${Math.max(0, Math.ceil(enemy.hp))}`, x - 20, y - 10);
+    });
+
+    const playerX = w - 180;
+    const playerY = 160;
+    ctx.fillStyle = '#67d8a5';
+    ctx.fillRect(playerX, playerY, 48, 48);
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Player', playerX - 8, playerY - 12);
+
+    const panelHeight = 150;
+    ctx.fillStyle = '#0f1726';
+    ctx.fillRect(0, h - panelHeight, w, panelHeight);
+    ctx.strokeStyle = '#476089';
+    ctx.strokeRect(0, h - panelHeight, w, panelHeight);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(`Encounter: ${battle.encounterId}`, 20, h - 118);
+    ctx.fillText(`HP: ${Math.max(0, Math.floor(game.player.stats.hp))}/${game.player.stats.maxHp}`, 20, h - 94);
+    ctx.fillText('Command: [E] Attack', 20, h - 70);
+    ctx.fillText(battle.turnMessage, 20, h - 44);
   }
 
   drawMap(game) {

@@ -3,6 +3,7 @@ export const GAME_STATES = Object.freeze({
   CLASS_SELECT: 'class_select',
   TOWN: 'town',
   LEVEL: 'level',
+  BATTLE: 'battle',
   SHOP: 'shop',
   PAUSE: 'pause',
   GAME_OVER: 'game_over',
