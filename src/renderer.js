@@ -1,6 +1,7 @@
 import { drawMiniMap } from './miniMap.js';
 import { debugText } from './debug.js';
 import { TILE_SIZE } from './camera.js';
+import { GAME_STATES } from './stateManager.js';
 
 export class Renderer {
   constructor(canvas) {
@@ -15,6 +16,12 @@ export class Renderer {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     if (!game.currentMap) return;
 
+    if (game.state.is(GAME_STATES.BATTLE)) {
+      this.drawBattle(game);
+      if (game.debug.enabled) this.drawDebug(game);
+      return;
+    }
+
     game.camera.setViewport(this.canvas.width, this.canvas.height);
     game.camera.update(game.player.x, game.player.y, game.currentMap.width, game.currentMap.height);
 
@@ -24,6 +31,56 @@ export class Renderer {
     this.drawFx(game);
     if (game.showMiniMap) drawMiniMap(ctx, game, this.canvas.width - 210, 10, 200, 140);
     if (game.debug.enabled) this.drawDebug(game);
+  }
+
+  drawBattle(game) {
+    const { ctx } = this;
+    const battle = game.battleSystem.activeBattle;
+    if (!battle) return;
+
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const panelHeight = 170;
+    ctx.fillStyle = battle.background === 'dungeon' ? '#1a1f2f' : '#1f2a3a';
+    ctx.fillRect(0, 0, w, h);
+
+    const enemies = battle.enemies.filter((enemy) => !enemy.dead);
+    const enemyStartY = Math.max(80, (h - panelHeight - enemies.length * 80) / 2);
+    enemies.forEach((enemy, index) => {
+      const x = 120 + (index % 2) * 45;
+      const y = enemyStartY + index * 80;
+      if (!this.drawEnemyBattleSprite(enemy, x, y, 46, 46)) {
+        ctx.fillStyle = '#d95f5f';
+        ctx.fillRect(x, y, 46, 46);
+      }
+      ctx.fillStyle = '#fff';
+      ctx.fillText(`${enemy.template.name} HP:${Math.max(0, Math.ceil(enemy.hp))}`, x - 20, y - 10);
+    });
+
+    const playerX = w - 220;
+    const playerY = Math.max(110, h - panelHeight - 150);
+    if (!this.drawBattlePlayerSprite(game, playerX, playerY, 54, 54)) {
+      ctx.fillStyle = '#67d8a5';
+      ctx.fillRect(playerX, playerY, 54, 54);
+    }
+    ctx.fillStyle = '#fff';
+    ctx.fillText(`Player HP:${Math.max(0, Math.floor(game.player.stats.hp))}/${game.player.stats.maxHp}`, playerX - 38, playerY - 12);
+
+    ctx.fillStyle = '#0f1726';
+    ctx.fillRect(0, h - panelHeight, w, panelHeight);
+    ctx.strokeStyle = '#476089';
+    ctx.strokeRect(0, h - panelHeight, w, panelHeight);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(`Encounter: ${battle.encounterId}`, 20, h - 118);
+    ctx.fillText(`Turn: ${battle.state === 'player_turn' ? 'Player' : 'Enemies'}`, 20, h - 94);
+    ctx.fillText('Actions: 1 Light | 2 Heavy | 3 Magic | E Confirm', 20, h - 70);
+    const options = ['1 Light', '2 Heavy', '3 Magic'];
+    options.forEach((label, index) => {
+      ctx.fillStyle = battle.selectedActionIndex === index ? '#8ee3ff' : '#c9d7ee';
+      ctx.fillText(`${battle.selectedActionIndex === index ? '>' : ' '} ${label}`, 420 + index * 130, h - 70);
+    });
+    ctx.fillStyle = '#fff';
+    ctx.fillText(battle.turnMessage, 20, h - 40);
   }
 
   drawMap(game) {
@@ -101,9 +158,51 @@ export class Renderer {
     for (const enemy of game.currentEnemies) {
       if (enemy.dead) continue;
       const pos = game.camera.worldToScreen(enemy.x, enemy.y);
-      ctx.fillStyle = '#f06464';
-      ctx.fillRect(pos.x + 6, pos.y + 6, 20, 20);
+      if (!this.drawEnemyLevelSprite(enemy, pos.x + 6, pos.y + 6, 20, 20)) {
+        ctx.fillStyle = '#f06464';
+        ctx.fillRect(pos.x + 6, pos.y + 6, 20, 20);
+      }
     }
+  }
+
+  drawEnemyBattleSprite(enemy, x, y, width, height) {
+    const imagePath = enemy?.template?.sprites?.battle;
+    const image = this.getTextureImage(imagePath);
+    if (!image) return false;
+    this.ctx.drawImage(image, x, y, width, height);
+    return true;
+  }
+
+  drawEnemyLevelSprite(enemy, x, y, width, height) {
+    const imagePath = enemy?.template?.sprites?.inLevel;
+    const image = this.getTextureImage(imagePath);
+    if (!image) return false;
+    this.ctx.drawImage(image, x, y, width, height);
+    return true;
+  }
+
+  drawBattlePlayerSprite(game, x, y, width, height) {
+    const anim = game.player?.animation;
+    if (!anim?.sprite?.imagePath) return false;
+    const image = this.getTextureImage(anim.sprite.imagePath);
+    if (!image) return false;
+
+    const idleRow = anim.sprite.rowByFacing?.right?.idle;
+    const idleFrame = anim.sprite.idleFrames?.[0];
+    if (!Number.isFinite(idleRow) || !Number.isFinite(idleFrame)) return false;
+
+    this.ctx.drawImage(
+      image,
+      idleFrame * anim.sprite.frameWidth,
+      idleRow * anim.sprite.frameHeight,
+      anim.sprite.frameWidth,
+      anim.sprite.frameHeight,
+      x,
+      y,
+      width,
+      height,
+    );
+    return true;
   }
 
   drawPlayerSprite(game, screenX, screenY) {
