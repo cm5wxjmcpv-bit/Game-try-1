@@ -49,16 +49,20 @@ export class Renderer {
     enemies.forEach((enemy, index) => {
       const x = 120 + (index % 2) * 45;
       const y = enemyStartY + index * 80;
-      ctx.fillStyle = '#d95f5f';
-      ctx.fillRect(x, y, 46, 46);
+      if (!this.drawEnemyBattleSprite(enemy, x, y, 46, 46)) {
+        ctx.fillStyle = '#d95f5f';
+        ctx.fillRect(x, y, 46, 46);
+      }
       ctx.fillStyle = '#fff';
       ctx.fillText(`${enemy.template.name} HP:${Math.max(0, Math.ceil(enemy.hp))}`, x - 20, y - 10);
     });
 
     const playerX = w - 220;
     const playerY = Math.max(110, h - panelHeight - 150);
-    ctx.fillStyle = '#67d8a5';
-    ctx.fillRect(playerX, playerY, 54, 54);
+    if (!this.drawBattlePlayerSprite(game, playerX, playerY, 54, 54)) {
+      ctx.fillStyle = '#67d8a5';
+      ctx.fillRect(playerX, playerY, 54, 54);
+    }
     ctx.fillStyle = '#fff';
     ctx.fillText(`Player HP:${Math.max(0, Math.floor(game.player.stats.hp))}/${game.player.stats.maxHp}`, playerX - 38, playerY - 12);
 
@@ -154,9 +158,51 @@ export class Renderer {
     for (const enemy of game.currentEnemies) {
       if (enemy.dead) continue;
       const pos = game.camera.worldToScreen(enemy.x, enemy.y);
-      ctx.fillStyle = '#f06464';
-      ctx.fillRect(pos.x + 6, pos.y + 6, 20, 20);
+      if (!this.drawEnemyLevelSprite(enemy, pos.x + 6, pos.y + 6, 20, 20)) {
+        ctx.fillStyle = '#f06464';
+        ctx.fillRect(pos.x + 6, pos.y + 6, 20, 20);
+      }
     }
+  }
+
+  drawEnemyBattleSprite(enemy, x, y, width, height) {
+    const imagePath = enemy?.template?.sprites?.battle;
+    const image = this.getTextureImage(imagePath);
+    if (!image) return false;
+    this.ctx.drawImage(image, x, y, width, height);
+    return true;
+  }
+
+  drawEnemyLevelSprite(enemy, x, y, width, height) {
+    const imagePath = enemy?.template?.sprites?.inLevel;
+    const image = this.getTextureImage(imagePath);
+    if (!image) return false;
+    this.ctx.drawImage(image, x, y, width, height);
+    return true;
+  }
+
+  drawBattlePlayerSprite(game, x, y, width, height) {
+    const anim = game.player?.animation;
+    if (!anim?.sprite?.imagePath) return false;
+    const image = this.getTextureImage(anim.sprite.imagePath);
+    if (!image) return false;
+
+    const idleRow = anim.sprite.rowByFacing?.right?.idle;
+    const idleFrame = anim.sprite.idleFrames?.[0];
+    if (!Number.isFinite(idleRow) || !Number.isFinite(idleFrame)) return false;
+
+    this.ctx.drawImage(
+      image,
+      idleFrame * anim.sprite.frameWidth,
+      idleRow * anim.sprite.frameHeight,
+      anim.sprite.frameWidth,
+      anim.sprite.frameHeight,
+      x,
+      y,
+      width,
+      height,
+    );
+    return true;
   }
 
   drawPlayerSprite(game, screenX, screenY) {
